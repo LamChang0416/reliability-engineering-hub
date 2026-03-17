@@ -299,7 +299,7 @@
         <h2 style="margin-top: 0; color: var(--accent);">Ea Reference Guide</h2>
         <p>Activation Energy (Ea) represents the sensitivity of the failure mechanism to temperature stress.</p>
         <table class="modal-table">
-            <tr><th>Mechanism</th><th>Typical Ea</th></tr>
+            <tr><th>Mechanism</th><th>Typical Ea (eV)</th></tr>
             <tr><td>Semiconductor (Arrhenius)</td><td>0.7 eV</td></tr>
             <tr><td>Electromigration</td><td>0.6 - 0.9 eV</td></tr>
             <tr><td>Solder Joint (Creep)</td><td>1.1 eV</td></tr>
@@ -352,14 +352,25 @@
                     padding: 12,
                     titleFont: { size: 14 },
                     bodyFont: { size: 14 },
-                    displayColors: false
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw.toLocaleString() + ' Days';
+                        }
+                    }
                 }
             },
             scales: {
                 x: { 
                     type: 'logarithmic',
                     grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                    ticks: { color: '#94a3b8' }
+                    ticks: { color: '#94a3b8' },
+                    title: {
+                        display: true,
+                        text: 'Duration (Days)',
+                        color: '#94a3b8',
+                        font: { size: 12, weight: 'bold' }
+                    }
                 },
                 y: { 
                     grid: { display: false },
