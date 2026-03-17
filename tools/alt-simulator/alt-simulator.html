@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALT Simulator | Reliability Engineering Hub</title>
+    <!-- Open Graph for LinkedIn -->
+    <meta property="og:title" content="Reliability ALT Simulator">
+    <meta property="og:description" content="Calculate Acceleration Factors using the Arrhenius Model. Professional tool for Reliability Engineers.">
+    <meta property="og:type" content="website">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #020617;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.4);
+            --danger: #f87171;
+            --success: #34d399;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+
+        * { box-sizing: border-box; transition: all 0.3s ease; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #1e293b, #020617);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .dashboard {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 1000px;
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 30px;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .header-title h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent);
+            text-shadow: 0 0 20px var(--accent-glow);
+            margin: 0;
+            font-size: 2.2em;
+            letter-spacing: 2px;
+        }
+
+        .header-title p { color: var(--text-muted); margin: 5px 0 0 0; font-size: 1.1em; }
+
+        .btn-export {
+            background: var(--accent);
+            color: #020617;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 4px 15px var(--accent-glow); }
+
+        .controls-panel {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .val-display { color: var(--accent); font-family: 'Orbitron', sans-serif; font-size: 1.1em; }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px; width: 24px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            margin-top: -10px;
+            box-shadow: 0 0 15px var(--accent);
+            border: 3px solid #fff;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 6px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        #tTest::-webkit-slider-thumb { background: var(--danger); box-shadow: 0 0 15px var(--danger); }
+
+        .select-wrapper { position: relative; }
+        select {
+            width: 100%; padding: 12px;
+            background: rgba(30, 41, 59, 0.8); color: white;
+            border: 1px solid var(--glass-border); border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .ea-info-btn {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            background: var(--text-muted); color: #020617; width: 20px; height: 20px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: bold; cursor: help;
+        }
+
+        .results-panel { display: flex; flex-direction: column; gap: 20px; }
+        
+        .metric-card {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--danger);
+        }
+        .metric-card.af-card::before { background: var(--success); }
+
+        .metric-title { color: var(--text-muted); font-size: 0.8em; text-transform: uppercase; letter-spacing: 1.5px; }
+        .metric-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3em;
+            color: var(--danger);
+            margin: 10px 0;
+            filter: drop-shadow(0 0 10px rgba(248, 113, 113, 0.3));
+        }
+        .metric-card.af-card .metric-value { color: var(--success); filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.3)); }
+        .metric-unit { color: var(--text-muted); font-size: 0.9em; font-weight: 500; }
+
+        .chart-container {
+            grid-column: 1 / -1;
+            background: rgba(15, 23, 42, 0.5);
+            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            height: 300px;
+        }
+
+        .footer {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85em;
+            margin-top: 15px;
+            opacity: 0.6;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: var(--panel-bg); color: white; margin: 10% auto; padding: 30px;
+            border: 1px solid var(--glass-border); border-radius: 20px; width: 80%; max-width: 500px;
+            background: #1e293b;
+        }
+        .modal-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .modal-table th, .modal-table td { border-bottom: 1px solid #334155; padding: 12px; text-align: left; }
+        
+        @media (max-width: 850px) {
+            .dashboard { grid-template-columns: 1fr; padding: 20px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard" id="capture-area">
+    <div class="header">
+        <div class="header-title">
+            <h1>ALT SIMULATOR</h1>
+            <p>Arrhenius Physics-of-Failure Model</p>
+        </div>
+        <button class="btn-export" onclick="exportImage()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2-2 0 0 1-2 2H5a2-2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y1="3"></line></svg>
+            Export Results
+        </button>
+    </div>
+
+    <div class="controls-panel">
+        <div class="control-group">
+            <label>Field Life Requirement 
+                <span class="val-display" id="lifeVal">100k Hrs</span>
+            </label>
+            <input type="range" id="targetLife" min="1000" max="200000" step="1000" value="100000">
+        </div>
+
+        <div class="control-group">
+            <label>Use Temp (T_use)
+                <span class="val-display" id="useTempVal">25°C</span>
+            </label>
+            <input type="range" id="tUse" min="10" max="60" step="1" value="25">
+        </div>
+
+        <div class="control-group">
+            <label>Stress Temp (T_test)
+                <span class="val-display" id="tempVal" style="color: var(--danger);">85°C</span>
+            </label>
+            <input type="range" id="tTest" min="40" max="150" step="5" value="85">
+        </div>
+
+        <div class="control-group">
+            <label>Activation Energy (Ea)</label>
+            <div class="select-wrapper">
+                <select id="ea">
+                    <option value="0.7">0.7 eV (Semiconductors / General)</option>
+                    <option value="0.9">0.9 eV (Metal / High Sensitivity)</option>
+                    <option value="0.4">0.4 eV (Interconnects / Low Sensitivity)</option>
+                    <option value="1.1">1.1 eV (Gate Oxide / Dielectric)</option>
+                </select>
+                <div class="ea-info-btn" onclick="toggleModal(true)">i</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="results-panel">
+        <div class="metric-card">
+            <div class="metric-title">Required Test Duration</div>
+            <div class="metric-value" id="resDays">43</div>
+            <div class="metric-unit">LAB DAYS</div>
+        </div>
+        <div class="metric-card af-card">
+            <div class="metric-title">Acceleration Factor</div>
+            <div class="metric-value" id="resAF">96</div>
+            <div class="metric-unit">X PERFORMANCE STRESS</div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="timeChart"></canvas>
+    </div>
+
+    <div class="footer">
+        Equation: AF = exp[(Ea/k)*(1/T_use - 1/T_test)] | Created by Engineer Lam
+    </div>
+</div>
+
+<div id="eaModal" class="modal">
+    <div class="modal-content">
+        <h2 style="margin-top: 0; color: var(--accent);">Ea Reference Guide</h2>
+        <p>Activation Energy (Ea) represents the sensitivity of the failure mechanism to temperature stress.</p>
+        <table class="modal-table">
+            <tr><th>Mechanism</th><th>Typical Ea</th></tr>
+            <tr><td>Semiconductor (Arrhenius)</td><td>0.7 eV</td></tr>
+            <tr><td>Electromigration</td><td>0.6 - 0.9 eV</td></tr>
+            <tr><td>Solder Joint (Creep)</td><td>1.1 eV</td></tr>
+            <tr><td>Corrosion</td><td>0.3 - 0.6 eV</td></tr>
+        </table>
+        <button onclick="toggleModal(false)" style="margin-top: 20px; width: 100%; padding: 10px; border-radius: 10px; border: none; background: var(--accent); color: #020617; font-weight: bold; cursor: pointer;">Close Guide</button>
+    </div>
+</div>
+
+<script>
+    const k = 0.00008617;
+
+    const targetLifeInput = document.getElementById('targetLife');
+    const tUseInput = document.getElementById('tUse');
+    const tTestInput = document.getElementById('tTest');
+    const eaInput = document.getElementById('ea');
+    
+    const lifeValText = document.getElementById('lifeVal');
+    const useTempValText = document.getElementById('useTempVal');
+    const tempValText = document.getElementById('tempVal');
+    const resDaysText = document.getElementById('resDays');
+    const resAFText = document.getElementById('resAF');
+
+    const ctx = document.getElementById('timeChart').getContext('2d');
+    
+    const timeChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Field Use', 'Lab Oven'],
+            datasets: [{
+                data: [0, 0],
+                backgroundColor: [
+                    'rgba(56, 189, 248, 0.2)', 
+                    'rgba(248, 113, 113, 0.2)'
+                ],
+                borderColor: ['#38bdf8', '#f87171'],
+                borderWidth: 2,
+                borderRadius: 12,
+                barThickness: 40
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    padding: 12,
+                    titleFont: { size: 14 },
+                    bodyFont: { size: 14 },
+                    displayColors: false
+                }
+            },
+            scales: {
+                x: { 
+                    type: 'logarithmic',
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#94a3b8' }
+                },
+                y: { 
+                    grid: { display: false },
+                    ticks: { color: '#f1f5f9', font: { weight: 'bold', size: 14 } }
+                }
+            }
+        }
+    });
+
+    function updateDashboard() {
+        const targetLife = parseFloat(targetLifeInput.value);
+        const tUseC = parseFloat(tUseInput.value);
+        const tTestC = parseFloat(tTestInput.value);
+        const ea = parseFloat(eaInput.value);
+        
+        lifeValText.innerText = (targetLife/1000).toFixed(0) + "k Hrs";
+        useTempValText.innerText = tUseC + "°C";
+        tempValText.innerText = tTestC + "°C";
+
+        const tUseK = tUseC + 273.15;
+        const tTestK = tTestC + 273.15;
+        
+        let af = 1;
+        if (tTestK > tUseK) {
+            af = Math.exp((ea / k) * (1/tUseK - 1/tTestK));
+        }
+
+        const testHrs = targetLife / af;
+        const testDays = testHrs / 24;
+        const realWorldDays = targetLife / 24;
+
+        // Animated Number Update
+        animateValue(resDaysText, parseInt(resDaysText.innerText.replace(/,/g, '')), Math.round(testDays));
+        animateValue(resAFText, parseInt(resAFText.innerText.replace(/,/g, '')), Math.round(af));
+
+        timeChart.data.datasets[0].data = [Math.round(realWorldDays), Math.round(testDays)];
+        timeChart.update();
+    }
+
+    function animateValue(obj, start, end) {
+        if (start === end) return;
+        let duration = 300;
+        let startTime = null;
+        function step(timestamp) {
+            if (!startTime) startTime = timestamp;
+            const progress = Math.min((timestamp - startTime) / duration, 1);
+            obj.innerHTML = Math.floor(progress * (end - start) + start).toLocaleString();
+            if (progress < 1) window.requestAnimationFrame(step);
+        }
+        window.requestAnimationFrame(step);
+    }
+
+    function toggleModal(show) {
+        document.getElementById('eaModal').style.display = show ? 'block' : 'none';
+    }
+
+    function exportImage() {
+        const area = document.getElementById('capture-area');
+        html2canvas(area, { backgroundColor: '#020617' }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'ALT-Simulation-Result.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    }
+
+    targetLifeInput.addEventListener('input', updateDashboard);
+    tUseInput.addEventListener('input', updateDashboard);
+    tTestInput.addEventListener('input', updateDashboard);
+    eaInput.addEventListener('change', updateDashboard);
+
+    updateDashboard();
+</script>
+
+</body>
+</html>
