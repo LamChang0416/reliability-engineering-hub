@@ -3,268 +3,621 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shock Energy Simulator | Reliability Lab</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shock Energy & Scenario Simulator | Developed by Lam</title>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
+
     <style>
+        :root {
+            --bg-color: #020617;
+            --glass-bg: rgba(30, 41, 59, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.4);
+            --danger: #f87171;
+            --warning: #fbbf24;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f0f2f5;
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #1e293b, #020617);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2vh 2vw;
             display: flex;
             justify-content: center;
-            padding: 20px;
+            align-items: center;
+            min-height: 100vh;
         }
 
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        /* 主控台版面 */
+        .dashboard {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
             width: 100%;
-            max-width: 650px;
+            max-width: 1050px;
+            padding: 35px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
         }
 
-        h2 {
-            color: #1a73e8;
-            margin-top: 0;
-            border-bottom: 2px solid #e8f0fe;
-            padding-bottom: 10px;
-            text-align: center;
-        }
-
-        /* New Button Group Styling */
-        .waveform-selector {
+        /* 標題區 */
+        .header {
+            grid-column: 1 / -1;
             display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 20px;
+        }
+
+        .header-title h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent);
+            text-shadow: 0 0 15px var(--accent-glow);
+            margin: 0;
+            font-size: 1.8em;
+            letter-spacing: 2px;
+        }
+
+        .header-title p {
+            color: var(--text-muted);
+            margin: 5px 0 0 0;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-export {
+            background: var(--accent);
+            color: #020617;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.8em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 左側控制面板 */
+        .controls-panel {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            font-size: 0.8em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .val-display {
+            color: var(--accent);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1em;
+        }
+
+        /* 滑桿優化 (Touch-Friendly) */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            padding: 10px 0;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            margin-top: -9px;
+            box-shadow: 0 0 12px var(--accent);
+            border: 3px solid #fff;
+        }
+
+        /* 波形按鈕優化 */
+        .wave-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
         }
 
         .wave-btn {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #ddd;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            padding: 12px 5px;
             border-radius: 10px;
-            background: #fff;
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            font-weight: 600;
-            color: #666;
-            font-size: 14px;
-        }
-
-        .wave-btn:hover {
-            border-color: #1a73e8;
-            background: #f8faff;
-        }
-
-        .wave-btn.active {
-            border-color: #1a73e8;
-            background: #e8f0fe;
-            color: #1a73e8;
-            box-shadow: 0 4px 10px rgba(26, 115, 232, 0.2);
+            font-size: 0.75em;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .wave-btn span {
-            display: block;
-            font-size: 11px;
+            font-size: 0.85em;
             font-weight: normal;
             margin-top: 4px;
-            color: #888;
+            opacity: 0.7;
+        }
+
+        .wave-btn.active {
+            background: rgba(56, 189, 248, 0.08);
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
         }
 
         .wave-btn.active span {
-            color: #1a73e8;
+            opacity: 1;
+            color: var(--text-main);
         }
 
-        .control-group {
-            margin-bottom: 20px;
-        }
-
-        label {
+        /* 右側面板 */
+        .info-panel {
             display: flex;
-            justify-content: space-between;
-            font-weight: 600;
-            color: #444;
-            margin-bottom: 8px;
+            flex-direction: column;
+            gap: 15px;
         }
 
-        input[type="range"] {
-            width: 100%;
-            cursor: pointer;
-        }
-
-        .status-box {
+        .results-box {
             display: flex;
             gap: 15px;
-            margin-top: 20px;
         }
 
-        .stat {
+        .metric-card {
             flex: 1;
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 18px;
+            border-radius: 18px;
+            border: 1px solid var(--glass-border);
             text-align: center;
-            border-left: 5px solid #ccc;
+            position: relative;
+            overflow: hidden;
         }
 
-        .stat.highlight {
-            border-left-color: #e74c3c;
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent);
         }
 
-        .value {
-            font-size: 22px;
-            font-weight: bold;
+        .metric-card.danger-card::before {
+            background: var(--danger);
+        }
+
+        .metric-title {
+            color: var(--text-muted);
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .metric-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2em;
+            color: var(--accent);
+            margin: 8px 0;
+        }
+
+        .danger-card .metric-value {
+            color: var(--danger);
+        }
+
+        .metric-unit {
+            color: var(--text-muted);
+            font-size: 0.75em;
+        }
+
+        /* 情報卡片 */
+        .intel-card {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 20px;
+            border-radius: 18px;
+            border: 1px solid var(--glass-border);
+            flex-grow: 1;
+        }
+
+        .intel-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9em;
+            color: var(--warning);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .intel-item {
+            margin-bottom: 12px;
+        }
+
+        .intel-label {
+            color: var(--accent);
+            font-size: 0.8em;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 4px;
             display: block;
-            margin-top: 5px;
         }
 
-        .severity-tag {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 8px;
+        .intel-text {
+            color: var(--text-main);
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        /* 圖表與底部 */
+        .chart-container {
+            grid-column: 1 / -1;
+            background: rgba(15, 23, 42, 0.5);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            height: 280px;
+        }
+
+        .footer {
+            grid-column: 1 / -1;
             text-align: center;
-            font-weight: bold;
-            font-size: 14px;
+            color: var(--text-muted);
+            font-size: 0.75em;
+            margin-top: 5px;
+            opacity: 0.5;
+            font-weight: 500;
+        }
+
+        /* =========================================
+           📱 RWD 手機版優化 (Max-width: 768px)
+           ========================================= */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+                /* 單欄排版 */
+                padding: 20px;
+                gap: 15px;
+                border-radius: 16px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+                padding-bottom: 15px;
+            }
+
+            .header-title h1 {
+                font-size: 1.4em;
+            }
+
+            .header-title p {
+                font-size: 0.75em;
+            }
+
+            /* 按鈕佈局優化 */
+            .wave-selector {
+                gap: 5px;
+            }
+
+            .wave-btn {
+                padding: 10px 2px;
+                font-size: 0.65em;
+            }
+
+            .wave-btn span {
+                display: none;
+            }
+
+            /* 手機上隱藏副標題以節省空間 */
+
+            .controls-panel {
+                padding: 15px;
+                gap: 15px;
+            }
+
+            .results-box {
+                gap: 10px;
+            }
+
+            .metric-card {
+                padding: 12px;
+            }
+
+            .metric-value {
+                font-size: 1.6em;
+            }
+
+            .metric-title {
+                font-size: 0.65em;
+                letter-spacing: 0;
+            }
+
+            .intel-card {
+                padding: 15px;
+            }
+
+            .intel-text {
+                font-size: 0.85em;
+            }
+
+            .chart-container {
+                height: 220px;
+                padding: 10px;
+            }
+
+            /* 縮小圖表高度，讓畫面能塞下更多資訊 */
+            .footer {
+                font-size: 0.65em;
+                line-height: 1.4;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <div class="card">
-        <h2>⚡ Shock Energy Simulator</h2>
-
-        <label style="margin-bottom: 12px;">Step 1: Select Waveform Shape</label>
-        <div class="waveform-selector" id="waveformGroup">
-            <button class="wave-btn" data-value="sawtooth">
-                Sawtooth
-                <span>High Resonance</span>
-            </button>
-            <button class="wave-btn active" data-value="half-sine">
-                Half-Sine
-                <span>Standard Impact</span>
-            </button>
-            <button class="wave-btn" data-value="trapezoidal">
-                Trapezoidal
-                <span>Critical Energy</span>
+    <div class="dashboard" id="capture-area">
+        <div class="header">
+            <div class="header-title">
+                <h1>SHOCK SCENARIO SIMULATOR</h1>
+                <p>Developed by Lam | Reliability Engineering Hub</p>
+            </div>
+            <button class="btn-export" onclick="exportDashboard()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2-2 0 0 1-2 2H5a2-2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y1="3"></line>
+                </svg>
+                EXPORT
             </button>
         </div>
 
-        <div class="control-group">
-            <label>Step 2: Peak Acceleration (G) <span><span id="gVal">30</span> G</span></label>
-            <input type="range" id="gInput" min="10" max="100" value="30">
+        <div class="controls-panel">
+            <div class="control-group">
+                <label>1. Select Waveform Type</label>
+                <div class="wave-selector" id="waveGroup">
+                    <button class="wave-btn" data-type="sawtooth">SAWTOOTH <span>Resonance</span></button>
+                    <button class="wave-btn active" data-type="half-sine">HALF-SINE <span>Standard</span></button>
+                    <button class="wave-btn" data-type="trapezoidal">TRAPEZOID <span>Limit Test</span></button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>2. Peak Acceleration <span class="val-display" id="gVal">30 G</span></label>
+                <input type="range" id="gInput" min="10" max="100" step="1" value="30">
+            </div>
+
+            <div class="control-group">
+                <label>3. Pulse Duration <span class="val-display" id="msVal">11 ms</span></label>
+                <input type="range" id="msInput" min="2" max="30" step="0.5" value="11">
+            </div>
         </div>
 
-        <div class="control-group">
-            <label>Step 3: Duration (ms) <span><span id="msVal">11</span> ms</span></label>
-            <input type="range" id="msInput" min="2" max="30" value="11">
+        <div class="info-panel">
+            <div class="results-box">
+                <div class="metric-card">
+                    <div class="metric-title">Energy Density</div>
+                    <div class="metric-value" id="resEff">64%</div>
+                    <div class="metric-unit">EFFICIENCY</div>
+                </div>
+                <div class="metric-card danger-card">
+                    <div class="metric-title">Velocity Change (ΔV)</div>
+                    <div class="metric-value" id="resDV">2.07</div>
+                    <div class="metric-unit">METERS/SECOND</div>
+                </div>
+            </div>
+
+            <div class="intel-card">
+                <div class="intel-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                    WAVEFORM INTELLIGENCE
+                </div>
+                <div class="intel-item">
+                    <span class="intel-label">Physics Characteristics</span>
+                    <span class="intel-text" id="waveDesc">Description loading...</span>
+                </div>
+                <div class="intel-item">
+                    <span class="intel-label">Real-Life Simulation Scenario</span>
+                    <span class="intel-text" id="waveScenario">Scenario loading...</span>
+                </div>
+            </div>
         </div>
 
-        <canvas id="shockChart" height="150"></canvas>
-
-        <div class="status-box">
-            <div class="stat">Energy Density<br><span class="value" id="efficiency">64%</span></div>
-            <div class="stat highlight">Velocity Change (ΔV)<br><span class="value" id="dvResult">2.07 m/s</span></div>
+        <div class="chart-container">
+            <canvas id="shockChart"></canvas>
         </div>
 
-        <div id="severityTag" class="severity-tag">Severity: Medium (Standard)</div>
+        <div class="footer">
+            © 2026 Designed by Lam. Built for Excellence in Dynamic Environment Simulation & Solder Joint Integrity.
+        </div>
     </div>
 
     <script>
+        const waveIntel = {
+            'sawtooth': {
+                desc: 'Characterized by a slow rise and an instantaneous drop to zero. Although energy area is lowest (50%), its terminal peak generates extreme deceleration, exciting a broad frequency spectrum.',
+                scenario: 'Simulates brutal, rigid impacts like a cargo box slamming into a steel conveyor stop, or a truck with a stiff suspension hitting a pothole. Ideal for capturing resonance failures.'
+            },
+            'half-sine': {
+                desc: 'The industry standard symmetric pulse. Acceleration rises and falls smoothly. Energy content is moderate (64%). Primarily tests the ultimate structural strength of components.',
+                scenario: 'Simulates a product dropping onto a slightly cushioned surface (like a phone on a carpet), or simple collision between two elastic objects. A baseline test for component qualification.'
+            },
+            'trapezoidal': {
+                desc: 'The highest energy monster (90%+). Features rapid rise to peak, holds peak G (dwell time), then rapid fall. Forces components to absorb maximum dynamic energy, forcing material displacement.',
+                scenario: 'Simulates severe logistics drops from forklifts, or heavy machinery crashing without cushioning. Typically used for Rack-level transportation simulation. Critical for Solder Joint Creep analysis.'
+            }
+        };
+
+        let activeType = 'half-sine';
         const ctx = document.getElementById('shockChart').getContext('2d');
-        let chart;
-        let currentWaveform = 'half-sine'; // Default
+        let shockChart;
+
+        const gInput = document.getElementById('gInput');
+        const msInput = document.getElementById('msInput');
+        const gValText = document.getElementById('gVal');
+        const msValText = document.getElementById('msVal');
+        const resEffText = document.getElementById('resEff');
+        const resDVText = document.getElementById('resDV');
+        const waveDescText = document.getElementById('waveDesc');
+        const waveScenarioText = document.getElementById('waveScenario');
 
         function getCoeff(type) {
-            if (type === 'sawtooth') return 0.5;
+            if (type === 'sawtooth') return 0.50;
             if (type === 'half-sine') return 0.637;
-            if (type === 'trapezoidal') return 0.95;
+            if (type === 'trapezoidal') return 0.92;
         }
 
-        function updateUI() {
-            const a = parseFloat(document.getElementById('gInput').value);
-            const d = parseFloat(document.getElementById('msInput').value);
-            const coeff = getCoeff(currentWaveform);
+        function updateDashboard() {
+            const peakG = parseFloat(gInput.value);
+            const duration = parseFloat(msInput.value);
+            const coeff = getCoeff(activeType);
 
-            document.getElementById('gVal').innerText = a;
-            document.getElementById('msVal').innerText = d;
-            document.getElementById('efficiency').innerText = (coeff * 100).toFixed(0) + "%";
+            gValText.innerText = peakG + " G";
+            msValText.innerText = duration + " ms";
+            resEffText.innerText = (coeff * 100).toFixed(0) + "%";
 
-            const g_accel = 9.80665;
-            const dv = coeff * a * g_accel * (d / 1000);
-            document.getElementById('dvResult').innerText = dv.toFixed(2) + " m/s";
+            const dv = coeff * peakG * 9.80665 * (duration / 1000);
+            resDVText.innerText = dv.toFixed(2);
 
-            const tag = document.getElementById('severityTag');
-            if (currentWaveform === 'trapezoidal') {
-                tag.innerText = "🚨 Severity: Critical (Max Energy Transfer)";
-                tag.style.background = "#fdecea"; tag.style.color = "#d93025";
-            } else if (currentWaveform === 'half-sine') {
-                tag.innerText = "⚖️ Severity: Medium (Standard)";
-                tag.style.background = "#e8f0fe"; tag.style.color = "#1967d2";
-            } else {
-                tag.innerText = "🔍 Severity: Resonance Search (Low Energy)";
-                tag.style.background = "#e6f4ea"; tag.style.color = "#1e8e3e";
-            }
+            waveDescText.innerText = waveIntel[activeType].desc;
+            waveScenarioText.innerText = waveIntel[activeType].scenario;
 
             const points = [];
-            const totalSteps = 100;
-            for (let i = 0; i <= totalSteps; i++) {
-                let t = (i / totalSteps) * (d * 1.2);
-                let y = 0;
-                if (t <= d) {
-                    if (currentWaveform === 'half-sine') y = a * Math.sin(Math.PI * t / d);
-                    else if (currentWaveform === 'sawtooth') y = a * (t / d);
-                    else if (currentWaveform === 'trapezoidal') {
-                        const rise = d * 0.1;
-                        if (t < rise) y = a * (t / rise);
-                        else if (t > d - rise) y = a * (1 - (t - (d - rise)) / rise);
-                        else y = a;
+            const steps = 100;
+            const totalTime = duration * 1.4;
+
+            for (let i = 0; i <= steps; i++) {
+                let t = (i / steps) * totalTime;
+                let g = 0;
+                if (t <= duration) {
+                    if (activeType === 'half-sine') g = peakG * Math.sin(Math.PI * t / duration);
+                    else if (activeType === 'sawtooth') g = peakG * (t / duration);
+                    else if (activeType === 'trapezoidal') {
+                        const rise = duration * 0.1;
+                        if (t < rise) g = peakG * (t / rise);
+                        else if (t > duration - rise) g = peakG * (1 - (t - (duration - rise)) / rise);
+                        else g = peakG;
                     }
                 }
-                points.push({ x: t, y: y });
+                points.push({ x: t, y: g });
             }
 
-            if (chart) chart.destroy();
-            chart = new Chart(ctx, {
+            const chartColor = activeType === 'trapezoidal' ? '#f87171' : (activeType === 'sawtooth' ? '#34d399' : '#38bdf8');
+            const fillGlow = activeType === 'trapezoidal' ? 'rgba(248, 113, 113, 0.1)' : (activeType === 'sawtooth' ? 'rgba(52, 211, 153, 0.1)' : 'rgba(56, 189, 248, 0.1)');
+
+            if (shockChart) shockChart.destroy();
+            shockChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     datasets: [{
-                        label: 'Pulse (G)',
-                        data: points,
-                        borderColor: '#1a73e8',
-                        backgroundColor: currentWaveform === 'trapezoidal' ? 'rgba(217, 48, 37, 0.3)' : 'rgba(26, 115, 232, 0.2)',
-                        fill: true,
-                        tension: 0.2,
-                        pointRadius: 0
+                        data: points, borderColor: chartColor, backgroundColor: fillGlow,
+                        fill: true, tension: 0.3, pointRadius: 0, borderWidth: 3
                     }]
                 },
                 options: {
-                    responsive: true,
-                    animation: { duration: 300 },
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, animation: { duration: 300 } },
                     scales: {
-                        x: { type: 'linear', title: { display: true, text: 'Time (ms)' }, max: d * 1.2 },
-                        y: { min: 0, max: 110, title: { display: true, text: 'Accel (G)' } }
-                    },
-                    plugins: { legend: { display: false } }
+                        x: {
+                            type: 'linear', grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } },
+                            title: { display: true, text: 'Time (ms)', color: '#94a3b8', font: { size: 11 } }
+                        },
+                        y: {
+                            min: 0, max: 110, grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } },
+                            title: { display: true, text: 'Accel (G)', color: '#94a3b8', font: { size: 11 } }
+                        }
+                    }
                 }
             });
         }
 
-        // Button Click Logic
         document.querySelectorAll('.wave-btn').forEach(btn => {
             btn.addEventListener('click', function () {
                 document.querySelectorAll('.wave-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
-                currentWaveform = this.getAttribute('data-value');
-                updateUI();
+                activeType = this.getAttribute('data-type');
+                updateDashboard();
             });
         });
 
-        document.querySelectorAll('input').forEach(el => el.addEventListener('input', updateUI));
-        updateUI();
+        gInput.addEventListener('input', updateDashboard);
+        msInput.addEventListener('input', updateDashboard);
+
+        function exportDashboard() {
+            const area = document.getElementById('capture-area');
+            html2canvas(area, { backgroundColor: '#020617' }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Lam_ShockEnergy_Simulator-${activeType}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        updateDashboard();
     </script>
+
 </body>
 
 </html>
