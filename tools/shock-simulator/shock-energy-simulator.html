@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shock Energy Simulator | Reliability Lab</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 650px;
+        }
+
+        h2 {
+            color: #1a73e8;
+            margin-top: 0;
+            border-bottom: 2px solid #e8f0fe;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+
+        /* New Button Group Styling */
+        .waveform-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .wave-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 600;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .wave-btn:hover {
+            border-color: #1a73e8;
+            background: #f8faff;
+        }
+
+        .wave-btn.active {
+            border-color: #1a73e8;
+            background: #e8f0fe;
+            color: #1a73e8;
+            box-shadow: 0 4px 10px rgba(26, 115, 232, 0.2);
+        }
+
+        .wave-btn span {
+            display: block;
+            font-size: 11px;
+            font-weight: normal;
+            margin-top: 4px;
+            color: #888;
+        }
+
+        .wave-btn.active span {
+            color: #1a73e8;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .status-box {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 5px solid #ccc;
+        }
+
+        .stat.highlight {
+            border-left-color: #e74c3c;
+        }
+
+        .value {
+            font-size: 22px;
+            font-weight: bold;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .severity-tag {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h2>⚡ Shock Energy Simulator</h2>
+
+        <label style="margin-bottom: 12px;">Step 1: Select Waveform Shape</label>
+        <div class="waveform-selector" id="waveformGroup">
+            <button class="wave-btn" data-value="sawtooth">
+                Sawtooth
+                <span>High Resonance</span>
+            </button>
+            <button class="wave-btn active" data-value="half-sine">
+                Half-Sine
+                <span>Standard Impact</span>
+            </button>
+            <button class="wave-btn" data-value="trapezoidal">
+                Trapezoidal
+                <span>Critical Energy</span>
+            </button>
+        </div>
+
+        <div class="control-group">
+            <label>Step 2: Peak Acceleration (G) <span><span id="gVal">30</span> G</span></label>
+            <input type="range" id="gInput" min="10" max="100" value="30">
+        </div>
+
+        <div class="control-group">
+            <label>Step 3: Duration (ms) <span><span id="msVal">11</span> ms</span></label>
+            <input type="range" id="msInput" min="2" max="30" value="11">
+        </div>
+
+        <canvas id="shockChart" height="150"></canvas>
+
+        <div class="status-box">
+            <div class="stat">Energy Density<br><span class="value" id="efficiency">64%</span></div>
+            <div class="stat highlight">Velocity Change (ΔV)<br><span class="value" id="dvResult">2.07 m/s</span></div>
+        </div>
+
+        <div id="severityTag" class="severity-tag">Severity: Medium (Standard)</div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('shockChart').getContext('2d');
+        let chart;
+        let currentWaveform = 'half-sine'; // Default
+
+        function getCoeff(type) {
+            if (type === 'sawtooth') return 0.5;
+            if (type === 'half-sine') return 0.637;
+            if (type === 'trapezoidal') return 0.95;
+        }
+
+        function updateUI() {
+            const a = parseFloat(document.getElementById('gInput').value);
+            const d = parseFloat(document.getElementById('msInput').value);
+            const coeff = getCoeff(currentWaveform);
+
+            document.getElementById('gVal').innerText = a;
+            document.getElementById('msVal').innerText = d;
+            document.getElementById('efficiency').innerText = (coeff * 100).toFixed(0) + "%";
+
+            const g_accel = 9.80665;
+            const dv = coeff * a * g_accel * (d / 1000);
+            document.getElementById('dvResult').innerText = dv.toFixed(2) + " m/s";
+
+            const tag = document.getElementById('severityTag');
+            if (currentWaveform === 'trapezoidal') {
+                tag.innerText = "🚨 Severity: Critical (Max Energy Transfer)";
+                tag.style.background = "#fdecea"; tag.style.color = "#d93025";
+            } else if (currentWaveform === 'half-sine') {
+                tag.innerText = "⚖️ Severity: Medium (Standard)";
+                tag.style.background = "#e8f0fe"; tag.style.color = "#1967d2";
+            } else {
+                tag.innerText = "🔍 Severity: Resonance Search (Low Energy)";
+                tag.style.background = "#e6f4ea"; tag.style.color = "#1e8e3e";
+            }
+
+            const points = [];
+            const totalSteps = 100;
+            for (let i = 0; i <= totalSteps; i++) {
+                let t = (i / totalSteps) * (d * 1.2);
+                let y = 0;
+                if (t <= d) {
+                    if (currentWaveform === 'half-sine') y = a * Math.sin(Math.PI * t / d);
+                    else if (currentWaveform === 'sawtooth') y = a * (t / d);
+                    else if (currentWaveform === 'trapezoidal') {
+                        const rise = d * 0.1;
+                        if (t < rise) y = a * (t / rise);
+                        else if (t > d - rise) y = a * (1 - (t - (d - rise)) / rise);
+                        else y = a;
+                    }
+                }
+                points.push({ x: t, y: y });
+            }
+
+            if (chart) chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Pulse (G)',
+                        data: points,
+                        borderColor: '#1a73e8',
+                        backgroundColor: currentWaveform === 'trapezoidal' ? 'rgba(217, 48, 37, 0.3)' : 'rgba(26, 115, 232, 0.2)',
+                        fill: true,
+                        tension: 0.2,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    animation: { duration: 300 },
+                    scales: {
+                        x: { type: 'linear', title: { display: true, text: 'Time (ms)' }, max: d * 1.2 },
+                        y: { min: 0, max: 110, title: { display: true, text: 'Accel (G)' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // Button Click Logic
+        document.querySelectorAll('.wave-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.wave-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentWaveform = this.getAttribute('data-value');
+                updateUI();
+            });
+        });
+
+        document.querySelectorAll('input').forEach(el => el.addEventListener('input', updateUI));
+        updateUI();
+    </script>
+</body>
+
+</html>

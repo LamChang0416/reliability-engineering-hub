@@ -14,6 +14,12 @@ An interactive simulator to calculate **Acceleration Factors (AF)** and required
 - **Visual Analytics**: Real-time bar charts comparing field life vs. lab stress.
 - **Export Feature**: Download your simulation results as high-quality images for reports.
 
+### 2. Shock Energy Simulator
+An interactive tool to simulate mechanical shock events by evaluating peak acceleration (G), duration (ms), and energy density for different waveforms.
+- **Waveform Analysis**: Support for Half-Sine, Sawtooth, and Trapezoidal waveforms.
+- **Velocity Change (ΔV)**: Automatic calculation of Delta-V with severity classifications.
+- **Real-Time Visualization**: Dynamic pulse generation and graphing based on user inputs.
+
 ## 📂 Project Structure
 - `index.html`: The central hub and entry point.
 - `tools/`: Individual engineering tools categorized by function.
