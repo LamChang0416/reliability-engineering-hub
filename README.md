@@ -20,9 +20,19 @@ An interactive tool to simulate mechanical shock events by evaluating peak accel
 - **Velocity Change (ΔV)**: Automatic calculation of Delta-V with severity classifications.
 - **Real-Time Visualization**: Dynamic pulse generation and graphing based on user inputs.
 
+### 3. Altitude Physics Simulator
+An interactive dashboard simulating the three critical physics-of-failure mechanisms triggered by high-altitude air cargo shipping.
+- **Thermal Trap**: Visualizes CPU overheating as air density drops and convection cooling fails.
+- **Pressure Bomb**: Simulates capacitor swelling and rupture due to reduced external pressure.
+- **Arcing Ghost**: Demonstrates dielectric breakdown risk per Paschen's Law at low pressure.
+- **Real-Time Control**: Single altitude slider (0–45,000 ft) drives all three failure modes simultaneously.
+
 ## 📂 Project Structure
 - `index.html`: The central hub and entry point.
 - `tools/`: Individual engineering tools categorized by function.
+  - `alt-simulator/`: ALT / Arrhenius acceleration factor simulator.
+  - `shock-simulator/`: Mechanical shock energy and waveform simulator.
+  - `altitude-physics-simulator.html`: High-altitude air cargo physics simulator.
 - `assets/`: Shared styles and branding elements.
 
 ## 📖 How to Use

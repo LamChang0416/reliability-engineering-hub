@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Altitude Physics Simulator | Developed by Lam</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.85);
+            --border-glow: rgba(56, 189, 248, 0.3);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --safe-color: #10b981;
+            --warn-color: #f59e0b;
+            --danger-color: #ef4444;
+            --arc-color: #0ea5e9;
+        }
+
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; transition: all 0.3s ease-out; }
+
+        body {
+            margin: 0; padding: 20px;
+            background: radial-gradient(circle at center, #1e293b, #020617);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .dashboard {
+            width: 100%; max-width: 900px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; }
+        .header h1 { font-family: 'Orbitron', sans-serif; color: var(--text-main); margin: 0; font-size: 1.8rem; letter-spacing: 1px;}
+        .header p { color: var(--arc-color); font-weight: 600; margin-top: 5px; font-size: 0.9rem; text-transform: uppercase;}
+
+        /* Master Control Slider */
+        .control-panel {
+            background: rgba(0,0,0,0.4); border-radius: 15px; padding: 25px; margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.05); text-align: center;
+        }
+        .alt-display { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; color: var(--arc-color); text-shadow: 0 0 10px var(--arc-color); margin-bottom: 15px;}
+        .alt-display span { font-size: 1.2rem; color: var(--text-muted); }
+        
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent; height: 40px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 30px; width: 30px; border-radius: 50%;
+            background: var(--arc-color); cursor: pointer; box-shadow: 0 0 15px var(--arc-color);
+            margin-top: -12px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 6px; cursor: pointer; background: #334155; border-radius: 5px;
+        }
+
+        /* 3-in-1 Physics Grid */
+        .physics-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;
+        }
+        .card {
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px; padding: 20px; text-align: center; position: relative; overflow: hidden;
+        }
+        .card h3 { margin: 0 0 15px 0; font-family: 'Orbitron', sans-serif; font-size: 1.1rem; color: var(--text-main); border-bottom: 1px solid #334; padding-bottom: 10px;}
+        
+        .metric { font-size: 1.2rem; font-weight: bold; margin: 10px 0; font-family: 'Orbitron', sans-serif;}
+        .desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; height: 40px;}
+
+        /* Visualizations Box */
+        .vis-box { height: 140px; display: flex; align-items: center; justify-content: center; margin: 15px 0; background: rgba(0,0,0,0.3); border-radius: 10px; position: relative; overflow: hidden;}
+        
+        /* 1. Thermal Visual (Detailed CPU) */
+        #cpu-block { 
+            width: 70px; height: 70px; background: var(--safe-color); border-radius: 6px; 
+            box-shadow: 0 0 20px var(--safe-color), inset 0 0 15px rgba(0,0,0,0.4); 
+            display: flex; align-items: center; justify-content: center; 
+            font-weight: bold; color: #fff; position: relative; border: 2px solid rgba(0,0,0,0.5);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8); z-index: 2;
+        }
+        #cpu-block::before {
+            content: ''; position: absolute; top: -6px; left: 4px; right: 4px; bottom: -6px;
+            background: repeating-linear-gradient(to right, transparent, transparent 4px, #cbd5e1 4px, #cbd5e1 7px);
+            z-index: -1;
+        }
+        #cpu-block::after {
+            content: ''; position: absolute; top: 4px; left: -6px; right: -6px; bottom: 4px;
+            background: repeating-linear-gradient(to bottom, transparent, transparent 4px, #cbd5e1 4px, #cbd5e1 7px);
+            z-index: -1;
+        }
+        .air-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(rgba(255,255,255,0.4) 2px, transparent 2px); background-size: 18px 18px; opacity: 1; z-index: 1;}
+
+        /* 2. Pressure Visual (Detailed Capacitor) */
+        #capacitor-wrapper { display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2; margin-top: 15px;}
+        #capacitor { 
+            width: 54px; height: 75px; 
+            background: linear-gradient(to right, #475569 0%, #94a3b8 40%, #e2e8f0 50%, #94a3b8 60%, #334155 100%); 
+            border: 2px solid #1e293b; border-radius: 4px; position: relative; 
+            border-top-left-radius: 12px; border-top-right-radius: 12px;
+            box-shadow: inset 0 -10px 15px rgba(0,0,0,0.6);
+        }
+        #cap-vent { 
+            width: 34px; height: 12px; background: #cbd5e1; border-radius: 50%; 
+            position: absolute; top: -6px; left: 8px; border: 1px solid #64748b;
+            display: flex; justify-content: center; align-items: center;
+            transition: transform 0.2s, background 0.2s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+        #cap-vent::before { content: ''; position: absolute; width: 20px; height: 1px; background: #64748b; transform: rotate(45deg); }
+        #cap-vent::after { content: ''; position: absolute; width: 20px; height: 1px; background: #64748b; transform: rotate(-45deg); }
+        
+        .cap-legs { display: flex; gap: 16px; margin-top: -2px; z-index: -1; }
+        .cap-leg { width: 4px; height: 18px; background: linear-gradient(to right, #64748b, #cbd5e1, #475569); border-radius: 0 0 2px 2px; border: 1px solid #1e293b; border-top: none;}
+        
+        /* Fixed Leak Effect (Pure CSS/Text, No Emojis) */
+        .leak-effect { 
+            display: none; position: absolute; top: -30px; left: -10px; 
+            font-size: 14px; font-weight: bold; font-family: 'Orbitron', sans-serif;
+            color: #fff; background: var(--danger-color);
+            padding: 2px 6px; border-radius: 4px;
+            box-shadow: 0 0 10px var(--danger-color); border: 1px solid #fff;
+            animation: pop 0.3s forwards; z-index: 5;
+        }
+
+        /* 3. Electrical Visual (Detailed Terminals) */
+        .pins { width: 140px; display: flex; justify-content: space-between; position: relative; align-items: center; height: 100%;}
+        .pin { 
+            width: 16px; height: 70px; 
+            background: linear-gradient(to right, #64748b, #f8fafc, #94a3b8); 
+            border-radius: 8px 8px 3px 3px; position: relative; border: 1px solid #334155;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+        }
+        .pin::after {
+            content: ''; position: absolute; top: 12px; left: 3px; width: 8px; height: 8px; 
+            background: #0f172a; border-radius: 50%; box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+        }
+        #arc-flash { 
+            position: absolute; top: 40px; left: 16px; width: 108px; height: 8px; 
+            background: var(--arc-color); box-shadow: 0 0 20px #fff, 0 0 35px var(--arc-color); 
+            display: none; z-index: 10; 
+            clip-path: polygon(0 40%, 20% 0, 40% 60%, 60% 10%, 80% 80%, 100% 50%, 80% 100%, 60% 50%, 40% 90%, 20% 40%); 
+        }
+
+        .footer { text-align: center; margin-top: 30px; font-size: 0.85rem; color: var(--text-muted); }
+        .footer span { font-family: 'Orbitron', sans-serif; color: var(--arc-color); font-weight: bold;}
+
+        @keyframes pop { 0% { transform: scale(0.5); opacity: 0;} 100% { transform: scale(1.5); opacity: 1;} }
+
+        @media (max-width: 600px) {
+            .physics-grid { grid-template-columns: 1fr; }
+            .dashboard { padding: 15px; }
+            .alt-display { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="header">
+        <h1>HIGH-ALTITUDE PHYSICS SIMULATOR</h1>
+        <p>Your product isn't a pilot, but it still flies.</p>
+    </div>
+
+    <div class="control-panel">
+        <div class="alt-display" id="alt-text">0 <span>FT</span></div>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Adjust altitude to simulate air cargo stress (Max: 45,000 ft)</p>
+        <input type="range" id="altitude" min="0" max="45000" step="500" value="0">
+    </div>
+
+    <div class="physics-grid">
+        <div class="card" id="card-thermal">
+            <h3>1. THERMAL TRAP</h3>
+            <div class="vis-box">
+                <div class="air-particles" id="air-density-vis"></div>
+                <div id="cpu-block">CPU</div>
+            </div>
+            <div class="metric" id="temp-metric" style="color: var(--safe-color);">45 &deg;C</div>
+            <div class="desc">Air density drops: <strong id="density-text">100%</strong><br>Convection cooling fails.</div>
+        </div>
+
+        <div class="card" id="card-pressure">
+            <h3>2. PRESSURE BOMB</h3>
+            <div class="vis-box">
+                <div id="capacitor-wrapper">
+                    <div id="capacitor">
+                        <div id="cap-vent"></div>
+                        <div class="leak-effect" id="leak">POP!</div>
+                    </div>
+                    <div class="cap-legs">
+                        <div class="cap-leg"></div>
+                        <div class="cap-leg"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="metric" id="pressure-metric" style="color: var(--safe-color);">101.3 kPa</div>
+            <div class="desc">External pressure drops.<br>Internal sealed stress increases.</div>
+        </div>
+
+        <div class="card" id="card-electrical">
+            <h3>3. ARCING GHOST</h3>
+            <div class="vis-box">
+                <div class="pins">
+                    <div class="pin"></div>
+                    <div id="arc-flash"></div>
+                    <div class="pin"></div>
+                </div>
+            </div>
+            <div class="metric" id="voltage-metric" style="color: var(--safe-color);">Breakdown: >3.0 kV</div>
+            <div class="desc">Thin air loses insulation strength.<br>Paschen's Law activated.</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Developed by <span>Lam | Reliability Engineer</span><br>
+        Built for #VibeCoding & #PhysicsOfFailure
+    </div>
+</div>
+
+<script>
+    const slider = document.getElementById('altitude');
+    const altText = document.getElementById('alt-text');
+    
+    const cpuBlock = document.getElementById('cpu-block');
+    const tempMetric = document.getElementById('temp-metric');
+    const densityText = document.getElementById('density-text');
+    const airVis = document.getElementById('air-density-vis');
+
+    const capVent = document.getElementById('cap-vent');
+    const leakEffect = document.getElementById('leak');
+    const pressureMetric = document.getElementById('pressure-metric');
+
+    const arcFlash = document.getElementById('arc-flash');
+    const voltageMetric = document.getElementById('voltage-metric');
+
+    slider.addEventListener('input', function() {
+        let alt = parseInt(this.value);
+        altText.innerHTML = alt.toLocaleString() + ' <span>FT</span>';
+
+        let pressure_kPa = 101.325 * Math.pow(1 - (0.000006875 * (alt * 0.3048)), 5.255);
+        let density_pct = (pressure_kPa / 101.325) * 100;
+        
+        let baseTemp = 45;
+        let tempRise = (100 - density_pct) * 0.8; 
+        let currentTemp = Math.round(baseTemp + tempRise);
+        
+        densityText.innerText = density_pct.toFixed(1) + '%';
+        tempMetric.innerHTML = currentTemp + ' &deg;C';
+        airVis.style.opacity = density_pct / 100;
+
+        if(currentTemp < 70) {
+            cpuBlock.style.background = 'var(--safe-color)';
+            cpuBlock.style.boxShadow = '0 0 20px var(--safe-color), inset 0 0 15px rgba(0,0,0,0.4)';
+            tempMetric.style.color = 'var(--safe-color)';
+        } else if (currentTemp < 95) {
+            cpuBlock.style.background = 'var(--warn-color)';
+            cpuBlock.style.boxShadow = '0 0 20px var(--warn-color), inset 0 0 15px rgba(0,0,0,0.4)';
+            tempMetric.style.color = 'var(--warn-color)';
+        } else {
+            cpuBlock.style.background = 'var(--danger-color)';
+            cpuBlock.style.boxShadow = '0 0 20px var(--danger-color), inset 0 0 15px rgba(0,0,0,0.4)';
+            tempMetric.style.color = 'var(--danger-color)';
+        }
+
+        pressureMetric.innerText = pressure_kPa.toFixed(1) + ' kPa';
+        
+        if (alt < 20000) {
+            capVent.style.transform = `translateY(0px) scaleY(1)`;
+            capVent.style.background = '#cbd5e1';
+            leakEffect.style.display = 'none';
+            pressureMetric.style.color = 'var(--safe-color)';
+        } else if (alt < 35000) {
+            capVent.style.transform = `translateY(-6px) scaleY(1.5)`;
+            capVent.style.background = 'var(--warn-color)';
+            leakEffect.style.display = 'none';
+            pressureMetric.style.color = 'var(--warn-color)';
+            pressureMetric.innerText += ' (SWELLING)';
+        } else {
+            capVent.style.transform = `translateY(-12px) scaleY(2)`;
+            capVent.style.background = 'var(--danger-color)';
+            leakEffect.style.display = 'block';
+            pressureMetric.style.color = 'var(--danger-color)';
+            pressureMetric.innerText += ' (RUPTURE)';
+        }
+
+        let breakdown = 3.0 * (pressure_kPa / 101.3);
+        if(breakdown < 0.8) breakdown = 0.8; 
+        
+        voltageMetric.innerText = 'Breakdown: ' + breakdown.toFixed(1) + ' kV';
+
+        if (alt > 30000) {
+            arcFlash.style.display = 'block';
+            voltageMetric.style.color = 'var(--danger-color)';
+            voltageMetric.innerText += ' (ARC FAULT!)';
+            arcFlash.style.opacity = Math.random() > 0.5 ? 1 : 0.4;
+        } else {
+            arcFlash.style.display = 'none';
+            voltageMetric.style.color = 'var(--safe-color)';
+        }
+    });
+</script>
+</body>
+</html>
