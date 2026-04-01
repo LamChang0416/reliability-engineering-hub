@@ -27,12 +27,19 @@ An interactive dashboard simulating the three critical physics-of-failure mechan
 - **Arcing Ghost**: Demonstrates dielectric breakdown risk per Paschen's Law at low pressure.
 - **Real-Time Control**: Single altitude slider (0–45,000 ft) drives all three failure modes simultaneously.
 
+### 4. BGA Fatigue Simulator
+An interactive tool to simulate BGA solder joint thermal fatigue using the Coffin-Manson model.
+- **Acceleration Factor (AF)**: Calculate AF based on field conditions vs. lab test parameters.
+- **Thermal Fatigue Visualization**: Visualizes micro-tension and massive stress bend on chip, solder, and PCB.
+- **Material Properties**: Adjustable fatigue exponent for different solder materials (e.g., SnPb, SAC305).
+
 ## 📂 Project Structure
 - `index.html`: The central hub and entry point.
 - `tools/`: Individual engineering tools categorized by function.
   - `alt-simulator/`: ALT / Arrhenius acceleration factor simulator.
   - `shock-simulator/`: Mechanical shock energy and waveform simulator.
   - `altitude-physics-simulator.html`: High-altitude air cargo physics simulator.
+  - `bga-fatigue-simulator.html`: BGA solder joint thermal fatigue simulator.
 - `assets/`: Shared styles and branding elements.
 
 ## 📖 How to Use

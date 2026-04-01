@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BGA Fatigue Simulator | Developed by Lam</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.85);
+            --border-glow: rgba(56, 189, 248, 0.3);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --safe-color: #10b981;
+            --warn-color: #f59e0b;
+            --danger-color: #ef4444;
+            --arc-color: #0ea5e9;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease-out;
+        }
+
+        body {
+            margin: 0;
+            padding: 10px;
+            background: radial-gradient(circle at center, #1e293b, #020617);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 800px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .header h1 {
+            font-family: 'Orbitron', sans-serif;
+            margin: 0;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+            color: var(--text-main);
+        }
+
+        .header p {
+            color: var(--arc-color);
+            font-weight: 600;
+            margin-top: 5px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        /* Big Math Result Section */
+        .result-panel {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8);
+        }
+
+        .af-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            color: var(--safe-color);
+            text-shadow: 0 0 15px var(--safe-color);
+            line-height: 1;
+        }
+
+        .af-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .formula {
+            font-family: monospace;
+            color: #cbd5e1;
+            background: #1e293b;
+            padding: 3px 12px;
+            border-radius: 15px;
+            display: inline-block;
+            font-size: 0.8rem;
+        }
+
+        /* Split Screen Visuals with Detailed BGA Structure */
+        .visual-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .vis-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .vis-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            border-bottom: 1px solid #334;
+            padding-bottom: 8px;
+        }
+
+        /* New BGA Structure Visualizer */
+        .bga-structure {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 15px auto;
+            width: 100px;
+            position: relative;
+        }
+
+        /* Top Layer: CHIP */
+        .chip-layer {
+            width: 90px;
+            height: 12px;
+            background: #111;
+            border-radius: 2px 2px 0 0;
+            border: 1px solid #444;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 7px;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+        }
+
+        /* Middle Layer: SOLDER Joint (Updated shape to a Plausible Solder Ball) */
+        .solder-joint {
+            width: 50px;
+            height: 50px;
+            margin: -2px 0;
+            /* slight overlap for bonding look */
+            background: radial-gradient(ellipse at center, #cbd5e1 0%, #64748b 70%, #334155 100%);
+            border-radius: 50%;
+            /* Make it rounder like a ball */
+            position: relative;
+            box-shadow: inset 0 -5px 10px rgba(0, 0, 0, 0.5);
+            z-index: 1;
+            border: 1px solid rgba(0, 0, 0, 0.3);
+        }
+
+        /* The Crack (keep logic, adjust positioning) */
+        .crack {
+            position: absolute;
+            top: 15%;
+            left: 45%;
+            width: 3px;
+            height: 0%;
+            background: #000;
+            box-shadow: 0 0 5px var(--danger-color);
+            transition: height 0.3s;
+            z-index: 10;
+        }
+
+        .crack::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: -5px;
+            width: 3px;
+            height: 50%;
+            background: #000;
+            transform: rotate(30deg);
+            transform-origin: top;
+            box-shadow: 0 0 5px var(--danger-color);
+        }
+
+        /* Bottom Layer: PCB */
+        .pcb-layer {
+            width: 100px;
+            height: 15px;
+            /* Green PCB color with copper trace texture look */
+            background: linear-gradient(135deg, #065f46 25%, #166534 25%, #166534 50%, #065f46 50%, #065f46 75%, #166534 75%, #166534 100%);
+            background-size: 8px 8px;
+            /* trace texture */
+            border-radius: 0 0 4px 4px;
+            border: 1px solid #044131;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 8px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+            margin-top: -2px;
+        }
+
+        /* The Big Warning Labels for the visual context */
+        .bga-labels {
+            display: flex;
+            flex-direction: column;
+            text-align: right;
+            width: 30px;
+            position: absolute;
+            left: -35px;
+            top: 5px;
+            color: #64748b;
+            font-size: 7px;
+            font-weight: bold;
+        }
+
+        .bga-labels div {
+            margin: 12px 0;
+        }
+
+        /* Detailed Controls */
+        .control-group {
+            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 10px;
+            border-left: 3px solid var(--arc-color);
+        }
+
+        .control-group h4 {
+            margin: 0 0 12px 0;
+            font-size: 0.85rem;
+            color: var(--arc-color);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .slider-label {
+            width: 120px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .slider-val {
+            width: 45px;
+            text-align: right;
+            font-weight: bold;
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            flex-grow: 1;
+            margin: 0 12px;
+            background: transparent;
+            height: 20px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            margin-top: -6px;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            background: #475569;
+            border-radius: 3px;
+        }
+
+        #mat-c::-webkit-slider-runnable-track {
+            background: linear-gradient(to right, #e9d5ff, #a855f7);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .footer span {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--arc-color);
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .visual-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .af-value {
+                font-size: 2.5rem;
+            }
+
+            .dashboard {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard">
+        <div class="header">
+            <h1>BGA FATIGUE SIMULATOR</h1>
+            <p>Your Virtual Coffin-Manson Accelerator</p>
+        </div>
+
+        <div class="result-panel">
+            <div class="af-label">Acceleration Factor (AF)</div>
+            <div class="af-value" id="af-display">97.7x</div>
+            <div style="color: var(--text-muted); font-size: 0.8rem; margin: 8px 0;">
+                1 Lab Cycle = <span id="eq-cycles" style="color: #fff; font-weight: bold;">97</span> Everyday Cycles
+            </div>
+            <div class="formula">AF = (&Delta;T_test / &Delta;T_use)^c</div>
+        </div>
+
+        <div class="visual-grid">
+            <div class="vis-card">
+                <h3>EVERYDAY USE</h3>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Delta T: <span id="dt-use-val"
+                        style="color:#fff;">45</span> &deg;C</div>
+
+                <div class="bga-structure">
+                    <div class="bga-labels">
+                        <div>CHIP</div>
+                        <div style="margin: 25px 0 15px 0;">SOLDER</div>
+                        <div>PCB</div>
+                    </div>
+                    <div class="chip-layer">CHIP</div>
+                    <div class="solder-joint"></div>
+                    <div class="pcb-layer">PCB</div>
+                </div>
+
+                <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 5px;">Micro-Tension (Safe for years)</div>
+            </div>
+
+            <div class="vis-card">
+                <h3>LAB EXTREME TEST</h3>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Delta T: <span id="dt-test-val"
+                        style="color:#fff;">125</span> &deg;C</div>
+
+                <div class="bga-structure">
+                    <div class="chip-layer">CHIP</div>
+                    <div class="solder-joint" id="lab-solder">
+                        <div class="crack" id="lab-crack"></div>
+                    </div>
+                    <div class="pcb-layer">PCB</div>
+                </div>
+
+                <div style="font-size: 0.7rem; color: var(--danger-color); margin-top: 5px;" id="stress-warning">Massive
+                    Bend (Accelerated Failure)</div>
+            </div>
+        </div>
+
+        <div class="control-group" style="border-color: #10b981;">
+            <h4 style="color: #10b981;">1. FIELD CONDITIONS (EVERYDAY USE)</h4>
+            <div class="slider-row">
+                <div class="slider-label">Ambient / Off (&deg;C)</div>
+                <input type="range" id="use-min" min="0" max="40" value="25">
+                <div class="slider-val" id="val-use-min">25</div>
+            </div>
+            <div class="slider-row">
+                <div class="slider-label">Operating (&deg;C)</div>
+                <input type="range" id="use-max" min="40" max="100" value="70">
+                <div class="slider-val" id="val-use-max">70</div>
+            </div>
+        </div>
+
+        <div class="control-group" style="border-color: #ef4444;">
+            <h4 style="color: #ef4444;">2. THERMAL SHOCK LAB TEST</h4>
+            <div class="slider-row">
+                <div class="slider-label">Chamber Min (&deg;C)</div>
+                <input type="range" id="test-min" min="-65" max="0" value="-40">
+                <div class="slider-val" id="val-test-min">-40</div>
+            </div>
+            <div class="slider-row">
+                <div class="slider-label">Chamber Max (&deg;C)</div>
+                <input type="range" id="test-max" min="60" max="150" value="85">
+                <div class="slider-val" id="val-test-max">85</div>
+            </div>
+        </div>
+
+        <div class="control-group" style="border-color: #a855f7;">
+            <h4 style="color: #a855f7;">3. MATERIAL PROPERTIES</h4>
+            <div class="slider-row">
+                <div class="slider-label">Fatigue Exponent (c)</div>
+                <input type="range" id="mat-c" min="1.0" max="4.0" step="0.1" value="2.5">
+                <div class="slider-val" id="val-mat-c">2.5</div>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-align: right;">(SnPb ~1.9, SAC305 Lead-Free
+                ~2.5)</div>
+        </div>
+
+        <div class="footer">
+            Developed by <span>Lam | Reliability Engineer</span><br>
+            Built for #VibeCoding & #Reliability101
+        </div>
+    </div>
+
+    <script>
+        // Get Elements
+        const useMin = document.getElementById('use-min');
+        const useMax = document.getElementById('use-max');
+        const testMin = document.getElementById('test-min');
+        const testMax = document.getElementById('test-max');
+        const matC = document.getElementById('mat-c');
+
+        const valUseMin = document.getElementById('val-use-min');
+        const valUseMax = document.getElementById('val-use-max');
+        const valTestMin = document.getElementById('val-test-min');
+        const valTestMax = document.getElementById('val-test-max');
+        const valMatC = document.getElementById('val-mat-c');
+
+        const dtUseVal = document.getElementById('dt-use-val');
+        const dtTestVal = document.getElementById('dt-test-val');
+        const afDisplay = document.getElementById('af-display');
+        const eqCycles = document.getElementById('eq-cycles');
+
+        const labSolder = document.getElementById('lab-solder');
+        const labCrack = document.getElementById('lab-crack');
+        const stressWarning = document.getElementById('stress-warning');
+
+        function calculateAF() {
+            // 1. Get Values
+            let t_use_min = parseFloat(useMin.value);
+            let t_use_max = parseFloat(useMax.value);
+            let t_test_min = parseFloat(testMin.value);
+            let t_test_max = parseFloat(testMax.value);
+            let c = parseFloat(matC.value);
+
+            // Update Labels
+            valUseMin.innerText = t_use_min;
+            valUseMax.innerText = t_use_max;
+            valTestMin.innerText = t_test_min;
+            valTestMax.innerText = t_test_max;
+            valMatC.innerText = c.toFixed(1);
+
+            // 2. Calculate Delta T
+            let dt_use = Math.max(t_use_max - t_use_min, 1);
+            let dt_test = Math.max(t_test_max - t_test_min, 1);
+
+            dtUseVal.innerText = dt_use;
+            dtTestVal.innerText = dt_test;
+
+            // 3. Coffin-Manson Formula: AF = (dT_test / dT_use)^c
+            let af = Math.pow((dt_test / dt_use), c);
+
+            // Cap visual/display numbers if they get too insane
+            if (af > 9999) af = 9999;
+
+            afDisplay.innerText = af.toFixed(1) + 'x';
+            eqCycles.innerText = Math.round(af);
+
+            // 4. Update Visuals (Crack & Color based on AF severity)
+            // Adjust these thresholds to fit the 3.1 structure visual limits
+            if (af < 5) {
+                afDisplay.style.color = 'var(--text-main)';
+                afDisplay.style.textShadow = 'none';
+                labCrack.style.height = '0%';
+                labSolder.style.background = 'radial-gradient(ellipse at center, #cbd5e1 0%, #64748b 70%, #334155 100%)';
+                stressWarning.innerText = "Low Stress (Testing takes too long!)";
+                stressWarning.style.color = "var(--text-muted)";
+            } else if (af < 30) {
+                afDisplay.style.color = 'var(--warn-color)';
+                afDisplay.style.textShadow = '0 0 15px var(--warn-color)';
+                labCrack.style.height = '15%'; // Small visible crack
+                labSolder.style.background = 'radial-gradient(ellipse at center, #fcd34d 0%, #d97706 70%, #92400e 100%)';
+                stressWarning.innerText = "Moderate Stress (Standard Acceleration)";
+                stressWarning.style.color = "var(--warn-color)";
+            } else {
+                afDisplay.style.color = 'var(--safe-color)'; // Green is good for acceleration!
+                afDisplay.style.textShadow = '0 0 15px var(--safe-color)';
+                // Make the crack height exponential based on AF but cap it at the bottom of CHIP (around 45%)
+                let crackHeight = Math.min((Math.pow(af, 1.1) / 50) + 10, 45);
+                labCrack.style.height = crackHeight + '%';
+                labSolder.style.background = 'radial-gradient(ellipse at center, #fca5a5 0%, #dc2626 70%, #7f1d1d 100%)';
+                stressWarning.innerText = "Massive Stress (Highly Accelerated!)";
+                stressWarning.style.color = "var(--danger-color)";
+            }
+        }
+
+        // Attach Event Listeners
+        useMin.addEventListener('input', calculateAF);
+        useMax.addEventListener('input', calculateAF);
+        testMin.addEventListener('input', calculateAF);
+        testMax.addEventListener('input', calculateAF);
+        matC.addEventListener('input', calculateAF);
+
+        // Initial Calculation
+        calculateAF();
+    </script>
+</body>
+
+</html>
