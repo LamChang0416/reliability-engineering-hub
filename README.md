@@ -33,6 +33,12 @@ An interactive tool to simulate BGA solder joint thermal fatigue using the Coffi
 - **Thermal Fatigue Visualization**: Visualizes micro-tension and massive stress bend on chip, solder, and PCB.
 - **Material Properties**: Adjustable fatigue exponent for different solder materials (e.g., SnPb, SAC305).
 
+### 5. Vibration Resonance Simulator
+An interactive tool to analyze component resonance behavior under vibration profiles. It helps determine transmissibility and structural risk.
+- **Transmissibility**: Calculates dynamic amplification factor based on damping.
+- **Structural Risk Assessment**: Evaluates the risk of resonant failure under expected vibration.
+- **Interactive Visuals**: Real-time graphing to observe behavior across frequency spectrums.
+
 ## 📂 Project Structure
 - `index.html`: The central hub and entry point.
 - `tools/`: Individual engineering tools categorized by function.
@@ -40,6 +46,7 @@ An interactive tool to simulate BGA solder joint thermal fatigue using the Coffi
   - `shock-simulator/`: Mechanical shock energy and waveform simulator.
   - `altitude-physics-simulator.html`: High-altitude air cargo physics simulator.
   - `bga-fatigue-simulator.html`: BGA solder joint thermal fatigue simulator.
+  - `vib_resonance.html`: Vibration resonance behavior and transmissibility simulator.
 - `assets/`: Shared styles and branding elements.
 
 ## 📖 How to Use
