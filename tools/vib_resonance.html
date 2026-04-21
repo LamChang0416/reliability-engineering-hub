@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>共振破壞模擬器 PRO | Developed by Lam</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.85);
+            --border-glow: rgba(56, 189, 248, 0.3);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --safe-color: #10b981;
+            --warn-color: #f59e0b;
+            --danger-color: #ef4444;
+            --arc-color: #0ea5e9;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            transition: background 0.2s, border 0.2s, color 0.2s;
+        }
+
+        body {
+            margin: 0;
+            padding: 10px;
+            background: radial-gradient(circle at center, #1e293b, #020617);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 950px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .header h1 {
+            font-family: 'Orbitron', sans-serif;
+            margin: 0;
+            font-size: 1.6rem;
+            letter-spacing: 1px;
+            color: var(--text-main);
+        }
+
+        .header p {
+            color: var(--arc-color);
+            font-weight: 600;
+            margin-top: 5px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        /* Data Panel */
+        .result-panel {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 15px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .data-box {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            flex-basis: 120px;
+        }
+
+        .data-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .data-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: #fff;
+            line-height: 1;
+        }
+
+        .magnification {
+            color: var(--safe-color);
+            font-size: 2.5rem;
+            text-shadow: 0 0 10px var(--safe-color);
+        }
+
+        /* Comparison Grid */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        /* 1. Simulation Visual Area */
+        .sim-area {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            height: 350px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 30px;
+        }
+
+        .shaker-base {
+            width: 200px;
+            height: 25px;
+            background: #475569;
+            border-radius: 4px;
+            position: absolute;
+            bottom: 30px;
+            z-index: 10;
+            border-bottom: 5px solid #334155;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .stalk {
+            width: 12px;
+            height: 160px;
+            background: #94a3b8;
+            position: absolute;
+            bottom: 55px;
+            transform-origin: bottom center;
+            z-index: 1;
+        }
+
+        .mass {
+            width: 70px;
+            height: 50px;
+            background: #111;
+            border: 2px solid #64748b;
+            border-radius: 10px;
+            position: absolute;
+            bottom: 210px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            margin-left: -35px;
+            left: 50%;
+            z-index: 12;
+        }
+
+        .lens {
+            width: 25px;
+            height: 25px;
+            background: radial-gradient(circle at center, #0ea5e9, #020617);
+            border-radius: 50%;
+            border: 3px solid #334155;
+        }
+
+        .damping-pads {
+            width: 40px;
+            height: 12px;
+            background: transparent;
+            position: absolute;
+            bottom: 55px;
+            display: flex;
+            justify-content: space-between;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 5;
+        }
+
+        .pad {
+            width: 12px;
+            height: 12px;
+            background: #ef4444;
+            border-radius: 2px;
+        }
+
+        /* SENSORS */
+        .sensor {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            z-index: 30;
+        }
+
+        .sensor::after {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            font-weight: bold;
+            white-space: nowrap;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #sensor-a {
+            top: -6px;
+            left: 15px;
+            background: var(--arc-color);
+            box-shadow: 0 0 10px var(--arc-color);
+        }
+
+        #sensor-a::after {
+            content: 'Sensor A (1G)';
+            bottom: 18px;
+            left: -10px;
+            color: var(--arc-color);
+        }
+
+        #sensor-b {
+            top: -6px;
+            right: 10px;
+            background: var(--safe-color);
+            box-shadow: 0 0 10px var(--safe-color);
+        }
+
+        #sensor-b::after {
+            content: 'Sensor B (響應)';
+            bottom: 18px;
+            right: -10px;
+            color: var(--safe-color);
+        }
+
+        /* Warnings & Effects - FIXED CSS BUG HERE */
+        .warning-overlay {
+            position: absolute;
+            top: 15px;
+            font-family: 'Orbitron';
+            font-size: 1.1rem;
+            color: var(--danger-color);
+            text-shadow: 0 0 15px var(--danger-color);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid var(--danger-color);
+            z-index: 40;
+            text-align: center;
+            font-weight: bold;
+            animation: flash 0.3s infinite;
+            display: none;
+            /* Changed from opacity: 0 to display: none */
+        }
+
+        @keyframes flash {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .crack {
+            position: absolute;
+            background: #000;
+            box-shadow: 0 0 10px var(--danger-color);
+            opacity: 0;
+        }
+
+        #crack-stalk {
+            width: 100%;
+            height: 3px;
+            bottom: 20px;
+        }
+
+        #crack-mass {
+            width: 3px;
+            height: 100%;
+            left: 30px;
+        }
+
+        /* 2. Canvas Chart Area */
+        .chart-area {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            height: 350px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #334;
+            padding-bottom: 5px;
+        }
+
+        .chart-header h3 {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .legend span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend .box-a {
+            width: 12px;
+            height: 3px;
+            background: var(--arc-color);
+        }
+
+        .legend .box-b {
+            width: 12px;
+            height: 3px;
+            background: var(--danger-color);
+        }
+
+        canvas {
+            width: 100%;
+            flex-grow: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 6px;
+            border: 1px solid #334;
+        }
+
+        /* Controls Area */
+        .controls {
+            display: grid;
+            gap: 12px;
+        }
+
+        .slider-group {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 3px solid var(--arc-color);
+        }
+
+        .slider-group h4 {
+            margin: 0 0 15px 0;
+            font-size: 0.9rem;
+            color: var(--arc-color);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            flex-grow: 1;
+            margin: 0 15px;
+            background: transparent;
+            height: 20px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            margin-top: -9px;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(to right, #0ea5e9, #ef4444);
+            border-radius: 3px;
+        }
+
+        /* Strategy Buttons */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .strat-btn {
+            flex-grow: 1;
+            flex-basis: 150px;
+            padding: 12px;
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: #94a3b8;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .strat-btn.active {
+            background: rgba(14, 165, 233, 0.2);
+            border-color: var(--arc-color);
+            color: #fff;
+            box-shadow: inset 0 0 15px rgba(14, 165, 233, 0.4);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .footer span {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--arc-color);
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sim-area,
+            .chart-area {
+                height: 320px;
+            }
+
+            .magnification {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard">
+        <div class="header">
+            <h1>RESONANCE SIMULATOR PRO</h1>
+            <p>Frequency Response & Transmissibility v3.6</p>
+        </div>
+
+        <div class="result-panel">
+            <div class="data-box">
+                <div class="data-label">平台輸入 (Sensor A)</div>
+                <div class="data-value" style="color: var(--arc-color);">1.0 G</div>
+            </div>
+            <div class="data-box">
+                <div class="data-label">輸入頻率 (Hz)</div>
+                <div class="data-value"><span id="in-freq">10</span></div>
+            </div>
+            <div class="data-box">
+                <div class="data-label">樣品響應 (Sensor B)</div>
+                <div class="data-value magnification"><span id="mag-factor">1.0</span> G</div>
+            </div>
+        </div>
+
+        <div class="comparison-grid">
+            <div class="sim-area">
+                <div class="warning-overlay" id="warning">⚠ 共振發生！<br>結構損壞！零件損壞！</div>
+
+                <div class="mass" id="mass-ui">
+                    <div class="sensor" id="sensor-b"></div>
+                    <div class="lens" id="lens-ui"></div>
+                    <div class="crack" id="crack-mass"></div>
+                </div>
+
+                <div class="stalk" id="stalk-ui">
+                    <div class="crack" id="crack-stalk"></div>
+                </div>
+
+                <div class="damping-pads" id="pads-ui">
+                    <div class="pad"></div>
+                    <div class="pad"></div>
+                </div>
+
+                <div class="shaker-base" id="base-ui">
+                    <div class="sensor" id="sensor-a"></div>
+                    <div style="font-size: 0.6rem; color: #cbd5e1; position: absolute; bottom: -20px;">SHAKER PLATFORM
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-area">
+                <div class="chart-header">
+                    <h3>頻率響應圖 (Bode Plot)</h3>
+                    <div class="legend">
+                        <span style="color: var(--arc-color);">
+                            <div class="box-a"></div>Sensor A (輸入基線)
+                        </span>
+                        <span style="color: var(--danger-color);">
+                            <div class="box-b"></div>Sensor B (放大響應)
+                        </span>
+                    </div>
+                </div>
+                <canvas id="bodeCanvas" width="400" height="250"></canvas>
+                <div style="font-size: 0.65rem; color:#94a3b8; text-align:right; margin-top:5px;">Y軸: G值 (0~15G) | X軸:
+                    頻率 (10~100Hz)</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="slider-group">
+                <h4>1. 調整震動台輸入频率 (Sine Sweep)</h4>
+                <div class="slider-row">
+                    <span style="color: #94a3b8; font-size: 0.85rem; font-weight:bold;">10Hz</span>
+                    <input type="range" id="freq-slider" min="10" max="100" value="10" step="1">
+                    <span style="color: #94a3b8; font-size: 0.85rem; font-weight:bold;">100Hz</span>
+                </div>
+            </div>
+
+            <div class="slider-group" style="border-color: #a855f7;">
+                <h4 style="color: #a855f7;">2. 工程對策選擇 (Design Strategy)</h4>
+                <div class="btn-group">
+                    <button class="strat-btn active" data-mode="original"
+                        onclick="setStrategy('original')">原始設計<br><span
+                            style="font-size: 0.75rem; font-weight:normal;">(嚴重共振峰值)</span></button>
+                    <button class="strat-btn" data-mode="stiffen" onclick="setStrategy('stiffen')">增加剛性<br><span
+                            style="font-size: 0.75rem; font-weight:normal;">(峰值移至高頻)</span></button>
+                    <button class="strat-btn" data-mode="dampen" onclick="setStrategy('dampen')">增加阻尼<br><span
+                            style="font-size: 0.75rem; font-weight:normal;">(吸收並壓平峰值)</span></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Developed by <span>Lam | Reliability Engineer</span><br>
+            Built for #VibeCoding & #Reliability101
+        </div>
+    </div>
+
+    <script>
+        // Elements
+        const freqSlider = document.getElementById('freq-slider');
+        const inFreqDisp = document.getElementById('in-freq');
+        const magFactorDisp = document.getElementById('mag-factor');
+        const warning = document.getElementById('warning');
+
+        const baseUi = document.getElementById('base-ui');
+        const stalkUi = document.getElementById('stalk-ui');
+        const massUi = document.getElementById('mass-ui');
+        const lensUi = document.getElementById('lens-ui');
+        const padsUi = document.getElementById('pads-ui');
+        const sensorB = document.getElementById('sensor-b');
+        const crackStalk = document.getElementById('crack-stalk');
+        const crackMass = document.getElementById('crack-mass');
+        const buttons = document.querySelectorAll('.strat-btn');
+        const canvas = document.getElementById('bodeCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Physics Variables
+        let currentStrategy = 'original';
+        let fn = 45;
+        let zeta = 0.05;
+
+        // Animation Variables
+        let time = 0;
+        const baseAmplitude = 10;
+
+        function getMAG(f_in, f_n, z) {
+            let r = f_in / f_n;
+            let numerator = 1 + Math.pow(2 * z * r, 2);
+            let denominator = Math.pow(1 - Math.pow(r, 2), 2) + Math.pow(2 * z * r, 2);
+            return Math.sqrt(numerator / denominator);
+        }
+
+        function setStrategy(mode) {
+            currentStrategy = mode;
+            buttons.forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+
+            if (mode === 'original') {
+                fn = 45; zeta = 0.05;
+                stalkUi.style.width = '12px';
+                stalkUi.style.background = '#94a3b8';
+                padsUi.style.opacity = '0';
+            } else if (mode === 'stiffen') {
+                fn = 85; zeta = 0.05;
+                stalkUi.style.width = '24px';
+                stalkUi.style.background = '#cbd5e1';
+                padsUi.style.opacity = '0';
+            } else if (mode === 'dampen') {
+                fn = 45; zeta = 0.4;
+                stalkUi.style.width = '12px';
+                stalkUi.style.background = '#94a3b8';
+                padsUi.style.opacity = '1';
+            }
+
+            // Reset visually on switch
+            warning.style.display = 'none';
+            crackStalk.style.opacity = '0';
+            crackMass.style.opacity = '0';
+            lensUi.style.borderColor = '#334155';
+            lensUi.style.opacity = '1';
+        }
+
+        function drawChart(currentFin, currentMAG) {
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            const xMin = 10, xMax = 100;
+            const yMin = 0, yMax = 15;
+
+            const mapX = (f) => ((f - xMin) / (xMax - xMin)) * w;
+            const mapY = (mag) => h - ((mag - yMin) / (yMax - yMin)) * h;
+
+            // Grid Lines
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let i = 10; i <= 100; i += 10) { ctx.moveTo(mapX(i), 0); ctx.lineTo(mapX(i), h); }
+            for (let i = 0; i <= 15; i += 3) { ctx.moveTo(0, mapY(i)); ctx.lineTo(w, mapY(i)); }
+            ctx.stroke();
+
+            // Sensor A Baseline (1G)
+            ctx.beginPath();
+            ctx.strokeStyle = '#0ea5e9';
+            ctx.setLineDash([4, 4]);
+            ctx.lineWidth = 2;
+            let cy1G = mapY(1);
+            ctx.moveTo(mapX(xMin), cy1G);
+            ctx.lineTo(mapX(xMax), cy1G);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Sensor B Curve
+            ctx.beginPath();
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 3;
+            for (let f = xMin; f <= xMax; f += 0.5) {
+                let mag = getMAG(f, fn, zeta);
+                if (mag > 15) mag = 15;
+                let cx = mapX(f);
+                let cy = mapY(mag);
+                if (f === xMin) ctx.moveTo(cx, cy);
+                else ctx.lineTo(cx, cy);
+            }
+            ctx.stroke();
+
+            let cx = mapX(currentFin);
+            let cy = mapY(Math.min(currentMAG, 15));
+
+            // Indicator Line
+            ctx.beginPath();
+            ctx.strokeStyle = '#ef4444';
+            ctx.setLineDash([3, 3]);
+            ctx.lineWidth = 1.5;
+            ctx.moveTo(cx, h);
+            ctx.lineTo(cx, cy);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Indicator Dot
+            ctx.beginPath();
+            ctx.fillStyle = '#ef4444';
+            ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function animate() {
+            let fin = parseFloat(freqSlider.value);
+            inFreqDisp.innerText = fin;
+
+            let MAG = getMAG(fin, fn, zeta);
+            let displayMAG = Math.min(MAG, 15);
+            magFactorDisp.innerText = displayMAG.toFixed(1);
+
+            drawChart(fin, displayMAG);
+
+            time += fin * 0.015;
+
+            let baseX = Math.sin(time) * baseAmplitude;
+            let relativeDisplacement = Math.sin(time - Math.PI / 2) * (baseAmplitude * (displayMAG - 1));
+
+            let stalkHeight = 160;
+            let stalkAngle = Math.asin(relativeDisplacement / stalkHeight) * (180 / Math.PI);
+            if (isNaN(stalkAngle)) stalkAngle = relativeDisplacement > 0 ? 30 : -30;
+
+            baseUi.style.transform = `translateX(${baseX}px)`;
+            stalkUi.style.transform = `translateX(${baseX}px) rotate(${stalkAngle}deg)`;
+            massUi.style.transform = `translateX(${baseX + relativeDisplacement}px)`;
+            padsUi.style.transform = `translateX(${baseX}px)`;
+
+            // --- FIXED LOGIC: Strict thresholds & display toggling ---
+            if (displayMAG > 3.0) {
+                magFactorDisp.style.color = 'var(--danger-color)';
+                magFactorDisp.style.textShadow = '0 0 15px var(--danger-color)';
+                sensorB.style.backgroundColor = 'var(--danger-color)';
+                sensorB.style.boxShadow = '0 0 15px var(--danger-color)';
+
+                warning.style.display = 'block'; // Physically show the warning
+
+                if (currentStrategy === 'original') {
+                    warning.innerHTML = "⚠ 共振發生！<br>結構損壞！零件損壞！";
+                    crackStalk.style.opacity = '1';
+                    crackMass.style.opacity = '1';
+                    lensUi.style.borderColor = 'var(--danger-color)';
+                    lensUi.style.opacity = Math.random() > 0.3 ? 1 : 0.5;
+                } else if (currentStrategy === 'stiffen') {
+                    warning.innerHTML = "⚠ 高頻共振發生！<br>結構依然劇烈變形！";
+                    crackStalk.style.opacity = '0';
+                    crackMass.style.opacity = '0';
+                } else {
+                    warning.style.display = 'none';
+                }
+            } else if (displayMAG > 2.0) {
+                magFactorDisp.style.color = 'var(--warn-color)';
+                magFactorDisp.style.textShadow = '0 0 10px var(--warn-color)';
+                sensorB.style.backgroundColor = 'var(--warn-color)';
+                sensorB.style.boxShadow = '0 0 10px var(--warn-color)';
+
+                warning.style.display = 'none'; // Hide warning
+                crackStalk.style.opacity = '0';
+                crackMass.style.opacity = '0';
+                lensUi.style.borderColor = '#334155';
+                lensUi.style.opacity = '1';
+            } else {
+                magFactorDisp.style.color = '#fff';
+                magFactorDisp.style.textShadow = 'none';
+                sensorB.style.backgroundColor = 'var(--safe-color)';
+                sensorB.style.boxShadow = '0 0 10px var(--safe-color)';
+
+                warning.style.display = 'none'; // Hide warning
+                crackStalk.style.opacity = '0';
+                crackMass.style.opacity = '0';
+                lensUi.style.borderColor = '#334155';
+                lensUi.style.opacity = '1';
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Init
+        setStrategy('original');
+        animate();
+    </script>
+</body>
+
+</html>
