@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f172a">
+    <title>AI CDU 露點與微氣候模擬器</title>
+    <link rel="manifest" href="../manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --panel-bg: #0f172a;
+            --safe-color: #10b981;
+            --warn-color: #f59e0b;
+            --danger-color: #ef4444;
+            --water-color: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            overflow: hidden;
+        }
+
+        /* 上半部：視覺模擬區 */
+        .visual-area {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at center, #1e293b, #020617);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 2px solid #334155;
+            padding-top: 10px;
+        }
+
+        /* 標題與警報列 */
+        .status-bar {
+            position: absolute;
+            top: 15px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .status-bar h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            margin: 0;
+            letter-spacing: 1px;
+            color: var(--text-main);
+        }
+
+        .alert-box {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid var(--safe-color);
+            color: var(--safe-color);
+            transition: all 0.3s ease;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* GPU 與 CDU 水冷板硬體視覺 */
+        .hardware-container {
+            position: relative;
+            width: 160px;
+            height: 200px;
+            margin-top: 50px;
+        }
+
+        /* CDU 管線 */
+        .pipe-in,
+        .pipe-out {
+            position: absolute;
+            width: 24px;
+            height: 80px;
+            background: linear-gradient(90deg, #475569, #94a3b8, #475569);
+            top: -40px;
+            border-radius: 4px;
+            border: 1px solid #1e293b;
+            transition: all 0.5s ease;
+        }
+
+        .pipe-in {
+            left: 20px;
+        }
+
+        .pipe-out {
+            right: 20px;
+        }
+
+        /* 汗珠 (冷凝水) 動畫 */
+        .sweat {
+            position: absolute;
+            width: 6px;
+            height: 10px;
+            background: var(--water-color);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            opacity: 0;
+            box-shadow: 0 0 8px var(--water-color);
+        }
+
+        .sweat-1 {
+            left: 5px;
+            top: 10px;
+            animation: drip 1.5s infinite linear;
+        }
+
+        .sweat-2 {
+            right: 5px;
+            top: 20px;
+            animation: drip 1.2s infinite linear 0.5s;
+        }
+
+        @keyframes drip {
+            0% {
+                transform: translateY(0);
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(60px);
+                opacity: 0;
+            }
+        }
+
+        /* Cold Plate */
+        .cold-plate {
+            position: absolute;
+            width: 160px;
+            height: 40px;
+            background: #b45309;
+            /* 銅色 */
+            top: 40px;
+            border-radius: 6px;
+            border: 2px solid #78350f;
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        /* GPU 晶片 */
+        .gpu {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            background: #1e293b;
+            top: 80px;
+            left: 10px;
+            border-radius: 12px;
+            border: 3px solid #334155;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+            transition: all 0.5s ease;
+            z-index: 4;
+        }
+
+        .gpu-core {
+            width: 70px;
+            height: 70px;
+            background: #0f172a;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.5s ease;
+        }
+
+        .gpu-temp {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        /* 電火花動畫 (短路用) */
+        .spark {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #fff, var(--danger-color), transparent);
+            top: 60px;
+            left: 50px;
+            opacity: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        @keyframes spark-flash {
+
+            0%,
+            100% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.5);
+            }
+        }
+
+        /* 下半部：控制儀表板 */
+        .dashboard {
+            flex: 1;
+            max-height: 50vh;
+            background: var(--panel-bg);
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* 數據讀數區 */
+        .readouts {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            background: #020617;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #334155;
+        }
+
+        .data-box {
+            flex: 1;
+            text-align: center;
+            border-right: 1px solid #334155;
+        }
+
+        .data-box:last-child {
+            border-right: none;
+        }
+
+        .data-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .data-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        #dew-point-val {
+            color: var(--water-color);
+        }
+
+        /* 滑桿控制區 */
+        .control-group {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px 15px;
+            border-radius: 10px;
+            border-left: 3px solid #475569;
+        }
+
+        .control-group.env {
+            border-left-color: var(--warn-color);
+        }
+
+        .control-group.cdu {
+            border-left-color: var(--water-color);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .control-header label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+
+        .control-header span {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: #fff;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .footer span {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--water-color);
+            font-weight: bold;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            height: 30px;
+            margin: 0;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 36px;
+            width: 36px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            margin-top: -14px;
+        }
+
+        /* Screen Shake Animation for iOS fallback */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        .shake-active {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        .env input[type=range]::-webkit-slider-runnable-track {
+            background: linear-gradient(to right, #fbbf24, #ea580c);
+        }
+
+        .cdu input[type=range]::-webkit-slider-runnable-track {
+            background: linear-gradient(to right, #0ea5e9, #f43f5e);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="visual-area">
+        <div class="status-bar">
+            <h1>CDU 露點防禦與熱管理</h1>
+            <div class="alert-box" id="alert-box">✅ 系統安全：溫水冷卻運行中</div>
+        </div>
+
+        <div class="hardware-container">
+            <div class="pipe-in" id="pipe-ui">
+                <div class="sweat sweat-1" id="sweat-1"></div>
+            </div>
+            <div class="pipe-out" id="pipe-out-ui">
+                <div class="sweat sweat-2" id="sweat-2"></div>
+            </div>
+
+            <div class="cold-plate">銅製冷水板</div>
+
+            <div class="gpu" id="gpu-ui">
+                <div class="spark" id="spark-ui"></div>
+                <div class="gpu-core" id="gpu-core-ui">
+                    <span class="gpu-temp" id="gpu-temp-display">60°C</span>
+                </div>
+                <span style="font-size: 0.6rem; color: #64748b; margin-top: 8px;">AI GPU (1000W)</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="readouts">
+            <div class="data-box">
+                <div class="data-label">機房環境露點</div>
+                <div class="data-value" id="dew-point-val">15.0°C</div>
+            </div>
+            <div class="data-box">
+                <div class="data-label">供水溫度 (CDT)</div>
+                <div class="data-value" id="cdt-val" style="color: var(--water-color);">40.0°C</div>
+            </div>
+            <div class="data-box">
+                <div class="data-label">安全裕度 (Margin)</div>
+                <div class="data-value" id="margin-val">+25.0°C</div>
+            </div>
+        </div>
+
+        <div class="control-group env">
+            <div class="control-header">
+                <label>🌡️ 機房環境溫度 (Ambient)</label>
+                <span id="env-temp-text">25 °C</span>
+            </div>
+            <input type="range" id="env-temp-slider" min="15" max="40" value="25" step="0.5">
+        </div>
+
+        <div class="control-group env">
+            <div class="control-header">
+                <label>💧 機房相對濕度 (RH %)</label>
+                <span id="env-hum-text">50 %</span>
+            </div>
+            <input type="range" id="env-hum-slider" min="20" max="90" value="50" step="1">
+        </div>
+
+        <div class="control-group cdu">
+            <div class="control-header">
+                <label>🌊 CDU 出水溫度 (Coolant)</label>
+                <span id="cdu-temp-text">40 °C</span>
+            </div>
+            <input type="range" id="cdu-temp-slider" min="10" max="60" value="40" step="0.5">
+        </div>
+
+        <div class="footer">
+            Developed by <span>Lam | Reliability Engineer</span><br>
+            Built for #VibeCoding & #ThermalManagement
+        </div>
+    </div>
+
+    <script>
+        // DOM 元素
+        const envTempSlider = document.getElementById('env-temp-slider');
+        const envHumSlider = document.getElementById('env-hum-slider');
+        const cduTempSlider = document.getElementById('cdu-temp-slider');
+
+        const envTempText = document.getElementById('env-temp-text');
+        const envHumText = document.getElementById('env-hum-text');
+        const cduTempText = document.getElementById('cdu-temp-text');
+
+        const dewPointVal = document.getElementById('dew-point-val');
+        const cdtVal = document.getElementById('cdt-val');
+        const marginVal = document.getElementById('margin-val');
+
+        const alertBox = document.getElementById('alert-box');
+        const pipeUi = document.getElementById('pipe-ui');
+        const pipeOutUi = document.getElementById('pipe-out-ui');
+        const sweat1 = document.getElementById('sweat-1');
+        const sweat2 = document.getElementById('sweat-2');
+        const gpuUi = document.getElementById('gpu-ui');
+        const gpuCoreUi = document.getElementById('gpu-core-ui');
+        const gpuTempDisplay = document.getElementById('gpu-temp-display');
+        const sparkUi = document.getElementById('spark-ui');
+
+        let isVibrating = false;
+
+        // 馬格努斯公式 (Magnus-Tetens Formula) 計算精準露點
+        function calculateDewPoint(T, RH) {
+            const a = 17.27;
+            const b = 237.3;
+            let alpha = (a * T) / (b + T) + Math.log(RH / 100.0);
+            return (b * alpha) / (a - alpha);
+        }
+
+        // 觸覺震動回饋 (安全檢查) + 視覺補償
+        function triggerHaptic(type) {
+            // iOS 視覺補償：畫面震動
+            document.body.classList.remove('shake-active');
+            void document.body.offsetWidth; // trigger reflow
+            if (type === 'heavy') {
+                document.body.classList.add('shake-active');
+            }
+
+            if (!navigator.vibrate) return;
+            if (type === 'heavy' && !isVibrating) {
+                isVibrating = true;
+                navigator.vibrate([200, 100, 200]); // 兩次強震動 (冷凝短路)
+                setTimeout(() => { isVibrating = false; }, 500);
+            } else if (type === 'light') {
+                navigator.vibrate(50); // 輕微震動 (逼近邊界)
+            }
+        }
+
+        function updateSimulation() {
+            let T_env = parseFloat(envTempSlider.value);
+            let RH = parseFloat(envHumSlider.value);
+            let T_coolant = parseFloat(cduTempSlider.value);
+
+            // 更新文字顯示
+            envTempText.innerText = T_env.toFixed(1) + ' °C';
+            envHumText.innerText = RH + ' %';
+            cduTempText.innerText = T_coolant.toFixed(1) + ' °C';
+            cdtVal.innerText = T_coolant.toFixed(1) + ' °C';
+
+            // 計算物理數值
+            let T_dp = calculateDewPoint(T_env, RH);
+            dewPointVal.innerText = T_dp.toFixed(1) + ' °C';
+
+            let margin = T_coolant - T_dp;
+            let marginText = (margin > 0 ? '+' : '') + margin.toFixed(1) + ' °C';
+            marginVal.innerText = marginText;
+
+            // 模擬 GPU 溫度 (水溫 + 負載造成的溫差)
+            // 假設滿載時 GPU 會比水溫高 20度
+            let gpuTemp = T_coolant + 20;
+            gpuTempDisplay.innerText = gpuTemp.toFixed(1) + '°C';
+
+            // --- 邊界與災難邏輯判斷 ---
+            // 1. 左邊界：冷凝短路 (水溫 < 露點)
+            if (margin < 0) {
+                marginVal.style.color = 'var(--danger-color)';
+                alertBox.className = 'alert-box'; // reset
+                alertBox.style.background = 'rgba(239, 68, 68, 0.2)';
+                alertBox.style.borderColor = 'var(--danger-color)';
+                alertBox.style.color = 'var(--danger-color)';
+                alertBox.innerText = '⚡ 致命冷凝發生！水珠滴落引發短路';
+
+                // 動畫與特效
+                pipeUi.style.background = '#0284c7'; // 水管變超冷藍色
+                pipeOutUi.style.background = '#0284c7';
+                sweat1.style.display = 'block';
+                sweat2.style.display = 'block';
+                sparkUi.style.animation = 'spark-flash 0.5s infinite';
+                gpuUi.style.borderColor = 'var(--danger-color)';
+
+                triggerHaptic('heavy');
+            }
+            // 2. 逼近冷凝邊界 (安全裕度不足 2度)
+            else if (margin < 2.0) {
+                marginVal.style.color = 'var(--warn-color)';
+                alertBox.style.background = 'rgba(245, 158, 11, 0.2)';
+                alertBox.style.borderColor = 'var(--warn-color)';
+                alertBox.style.color = 'var(--warn-color)';
+                alertBox.innerText = '⚠ 警告：水溫逼近露點，結露風險極高';
+
+                pipeUi.style.background = '#38bdf8';
+                pipeOutUi.style.background = '#38bdf8';
+                sweat1.style.display = 'none';
+                sweat2.style.display = 'none';
+                sparkUi.style.animation = 'none';
+                gpuUi.style.borderColor = '#334155';
+
+                triggerHaptic('light');
+            }
+            // 3. 右邊界：熱裕度耗盡 / 加速老化 (水溫 > 55度)
+            else if (T_coolant > 55) {
+                marginVal.style.color = 'var(--text-main)';
+                alertBox.style.background = 'rgba(239, 68, 68, 0.2)';
+                alertBox.style.borderColor = 'var(--danger-color)';
+                alertBox.style.color = 'var(--danger-color)';
+                alertBox.innerText = '🔥 熱失控警告：水溫過高，GPU 嚴重降頻與老化';
+
+                pipeUi.style.background = 'linear-gradient(90deg, #b91c1c, #ef4444, #b91c1c)';
+                pipeOutUi.style.background = 'linear-gradient(90deg, #b91c1c, #ef4444, #b91c1c)';
+                sweat1.style.display = 'none';
+                sweat2.style.display = 'none';
+                sparkUi.style.animation = 'none';
+
+                gpuCoreUi.style.background = '#7f1d1d';
+                gpuTempDisplay.style.color = '#f87171';
+                gpuUi.style.borderColor = 'var(--danger-color)';
+
+                triggerHaptic('heavy');
+            }
+            // 4. 完美黃金平衡區 (安全不結露，且溫度適中)
+            else {
+                marginVal.style.color = 'var(--safe-color)';
+                alertBox.style.background = 'rgba(16, 185, 129, 0.2)';
+                alertBox.style.borderColor = 'var(--safe-color)';
+                alertBox.style.color = 'var(--safe-color)';
+                alertBox.innerText = '✅ 安全綠區：無冷凝風險，散熱效能優良';
+
+                pipeUi.style.background = 'linear-gradient(90deg, #475569, #94a3b8, #475569)';
+                pipeOutUi.style.background = 'linear-gradient(90deg, #475569, #94a3b8, #475569)';
+                sweat1.style.display = 'none';
+                sweat2.style.display = 'none';
+                sparkUi.style.animation = 'none';
+
+                gpuCoreUi.style.background = '#0f172a';
+                gpuTempDisplay.style.color = '#fff';
+                gpuUi.style.borderColor = '#334155';
+            }
+        }
+
+        // 綁定事件監聽
+        envTempSlider.addEventListener('input', updateSimulation);
+        envHumSlider.addEventListener('input', updateSimulation);
+        cduTempSlider.addEventListener('input', updateSimulation);
+
+        // PWA Service Worker 註冊
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('../sw.js').then(registration => {
+                    console.log('SW registered: ', registration);
+                }).catch(registrationError => {
+                    console.log('SW registration failed: ', registrationError);
+                });
+            });
+        }
+
+        // 初始執行
+        updateSimulation();
+    </script>
+</body>
+
+</html>

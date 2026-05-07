@@ -1,0 +1,16 @@
+{
+    "name": "CDU 露點模擬器",
+    "short_name": "露點模擬",
+    "description": "AI 伺服器液冷架構的微氣候與冷凝風險計算器",
+    "start_url": "./tools/cdu_dew_point.html",
+    "display": "standalone",
+    "background_color": "#020617",
+    "theme_color": "#0f172a",
+    "icons": [
+        {
+            "src": "./cdu_icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

@@ -39,6 +39,13 @@ An interactive tool to analyze component resonance behavior under vibration prof
 - **Structural Risk Assessment**: Evaluates the risk of resonant failure under expected vibration.
 - **Interactive Visuals**: Real-time graphing to observe behavior across frequency spectrums.
 
+### 6. CDU Dew Point Simulator (PWA Supported)
+An interactive tool to calculate precise dew points for AI GPU liquid cooling systems.
+- **Physics Formula**: Calculates precise dew points using the Magnus-Tetens formula.
+- **Visual Warning**: Shows real-time thermal throttling (GPU heating) and condensation (short circuit) risks.
+- **Haptic & Visual Feedback**: Simulates critical environmental feedback for immersion.
+- **Offline PWA**: Installable as a standalone app for use in signal-less data centers or cleanrooms.
+
 ## 📂 Project Structure
 - `index.html`: The central hub and entry point.
 - `tools/`: Individual engineering tools categorized by function.
@@ -47,6 +54,7 @@ An interactive tool to analyze component resonance behavior under vibration prof
   - `altitude-physics-simulator.html`: High-altitude air cargo physics simulator.
   - `bga-fatigue-simulator.html`: BGA solder joint thermal fatigue simulator.
   - `vib_resonance.html`: Vibration resonance behavior and transmissibility simulator.
+  - `cdu_dew_point.html`: AI Server CDU liquid cooling dew point simulator.
 - `assets/`: Shared styles and branding elements.
 
 ## 📖 How to Use
