@@ -90,20 +90,21 @@
             position: relative;
             width: 160px;
             height: 200px;
-            margin-top: 120px;
+            margin-top: 80px;
         }
 
-        /* CDU 管線 */
+        /* CDU 管線 (改為橫向從兩側進出，避免擋住上方文字) */
         .pipe-in,
         .pipe-out {
             position: absolute;
-            width: 24px;
-            height: 80px;
-            background: linear-gradient(90deg, #475569, #94a3b8, #475569);
-            top: -40px;
+            width: 60px;
+            height: 24px;
+            background: linear-gradient(0deg, #475569, #94a3b8, #475569);
+            top: 48px;
             border-radius: 4px;
             border: 1px solid #1e293b;
             transition: all 0.5s ease;
+            z-index: 4;
         }
 
         .pipe-label {
@@ -119,33 +120,33 @@
         }
 
         .pipe-in {
-            left: 20px;
+            left: -60px;
         }
 
         .pipe-out {
-            right: 20px;
+            right: -60px;
         }
 
         /* 汗珠 (冷凝水) 動畫 */
         .sweat {
             position: absolute;
-            width: 6px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             background: var(--water-color);
-            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            border-radius: 50%;
             opacity: 0;
             box-shadow: 0 0 8px var(--water-color);
         }
 
         .sweat-1 {
-            left: 5px;
-            top: 10px;
+            left: 26px;
+            top: 24px;
             animation: drip 1.5s infinite linear;
         }
 
         .sweat-2 {
-            right: 5px;
-            top: 20px;
+            left: 26px;
+            top: 24px;
             animation: drip 1.2s infinite linear 0.5s;
         }
 
@@ -160,7 +161,7 @@
             }
 
             100% {
-                transform: translateY(60px);
+                transform: translateY(40px);
                 opacity: 0;
             }
         }
@@ -601,8 +602,8 @@ Safe Zone: No Condensation</div>
                 alertBox.style.color = 'var(--danger-color)';
                 alertBox.innerText = '🔥 熱失控警告：水溫過高，GPU 嚴重降頻\nThermal Alert: GPU Throttling Risk';
 
-                pipeUi.style.background = 'linear-gradient(90deg, #b91c1c, #ef4444, #b91c1c)';
-                pipeOutUi.style.background = 'linear-gradient(90deg, #b91c1c, #ef4444, #b91c1c)';
+                pipeUi.style.background = 'linear-gradient(0deg, #b91c1c, #ef4444, #b91c1c)';
+                pipeOutUi.style.background = 'linear-gradient(0deg, #b91c1c, #ef4444, #b91c1c)';
                 sweat1.style.display = 'none';
                 sweat2.style.display = 'none';
                 sparkUi.style.animation = 'none';
@@ -621,8 +622,8 @@ Safe Zone: No Condensation</div>
                 alertBox.style.color = 'var(--safe-color)';
                 alertBox.innerText = '✅ 安全綠區：無冷凝風險，散熱效能優良\nSafe Zone: No Condensation, Optimal Cooling';
 
-                pipeUi.style.background = 'linear-gradient(90deg, #475569, #94a3b8, #475569)';
-                pipeOutUi.style.background = 'linear-gradient(90deg, #475569, #94a3b8, #475569)';
+                pipeUi.style.background = 'linear-gradient(0deg, #475569, #94a3b8, #475569)';
+                pipeOutUi.style.background = 'linear-gradient(0deg, #475569, #94a3b8, #475569)';
                 sweat1.style.display = 'none';
                 sweat2.style.display = 'none';
                 sparkUi.style.animation = 'none';
