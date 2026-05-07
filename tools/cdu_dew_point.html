@@ -63,10 +63,11 @@
 
         .status-bar h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: 1.1rem;
+            font-size: 1rem;
             margin: 0;
             letter-spacing: 1px;
             color: var(--text-main);
+            line-height: 1.2;
         }
 
         .alert-box {
@@ -74,12 +75,14 @@
             padding: 10px;
             border-radius: 8px;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             background: rgba(16, 185, 129, 0.2);
             border: 1px solid var(--safe-color);
             color: var(--safe-color);
             transition: all 0.3s ease;
             text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            white-space: pre-line;
+            line-height: 1.4;
         }
 
         /* GPU 與 CDU 水冷板硬體視覺 */
@@ -87,7 +90,7 @@
             position: relative;
             width: 160px;
             height: 200px;
-            margin-top: 50px;
+            margin-top: 120px;
         }
 
         /* CDU 管線 */
@@ -101,6 +104,18 @@
             border-radius: 4px;
             border: 1px solid #1e293b;
             transition: all 0.5s ease;
+        }
+
+        .pipe-label {
+            position: absolute;
+            top: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #cbd5e1;
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
 
         .pipe-in {
@@ -164,9 +179,11 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: bold;
             color: #fff;
+            text-align: center;
+            line-height: 1.2;
         }
 
         /* GPU 晶片 */
@@ -389,19 +406,22 @@
 
     <div class="visual-area">
         <div class="status-bar">
-            <h1>CDU 露點防禦與熱管理</h1>
-            <div class="alert-box" id="alert-box">✅ 系統安全：溫水冷卻運行中</div>
+            <h1>CDU 露點防禦與熱管理 <br> <span style="font-size: 0.75em; color: var(--text-muted);">Dew Point & Thermal Defense</span></h1>
+            <div class="alert-box" id="alert-box">✅ 安全綠區：無冷凝風險，散熱效能優良
+Safe Zone: No Condensation</div>
         </div>
 
         <div class="hardware-container">
             <div class="pipe-in" id="pipe-ui">
+                <div class="pipe-label">IN</div>
                 <div class="sweat sweat-1" id="sweat-1"></div>
             </div>
             <div class="pipe-out" id="pipe-out-ui">
+                <div class="pipe-label">OUT</div>
                 <div class="sweat sweat-2" id="sweat-2"></div>
             </div>
 
-            <div class="cold-plate">銅製冷水板</div>
+            <div class="cold-plate">銅製冷水板<br>(Cold Plate)</div>
 
             <div class="gpu" id="gpu-ui">
                 <div class="spark" id="spark-ui"></div>
@@ -416,22 +436,22 @@
     <div class="dashboard">
         <div class="readouts">
             <div class="data-box">
-                <div class="data-label">機房環境露點</div>
+                <div class="data-label">機房環境露點<br>(Dew Point)</div>
                 <div class="data-value" id="dew-point-val">15.0°C</div>
             </div>
             <div class="data-box">
-                <div class="data-label">供水溫度 (CDT)</div>
+                <div class="data-label">供水溫度<br>(CDT)</div>
                 <div class="data-value" id="cdt-val" style="color: var(--water-color);">40.0°C</div>
             </div>
             <div class="data-box">
-                <div class="data-label">安全裕度 (Margin)</div>
+                <div class="data-label">安全裕度<br>(Margin)</div>
                 <div class="data-value" id="margin-val">+25.0°C</div>
             </div>
         </div>
 
         <div class="control-group env">
             <div class="control-header">
-                <label>🌡️ 機房環境溫度 (Ambient)</label>
+                <label>🌡️ 機房環境溫度 (Ambient Temp)</label>
                 <span id="env-temp-text">25 °C</span>
             </div>
             <input type="range" id="env-temp-slider" min="15" max="40" value="25" step="0.5">
@@ -439,7 +459,7 @@
 
         <div class="control-group env">
             <div class="control-header">
-                <label>💧 機房相對濕度 (RH %)</label>
+                <label>💧 機房相對濕度 (Room RH %)</label>
                 <span id="env-hum-text">50 %</span>
             </div>
             <input type="range" id="env-hum-slider" min="20" max="90" value="50" step="1">
@@ -447,7 +467,7 @@
 
         <div class="control-group cdu">
             <div class="control-header">
-                <label>🌊 CDU 出水溫度 (Coolant)</label>
+                <label>🌊 CDU 出水溫度 (Coolant Temp)</label>
                 <span id="cdu-temp-text">40 °C</span>
             </div>
             <input type="range" id="cdu-temp-slider" min="10" max="60" value="40" step="0.5">
@@ -544,7 +564,7 @@
                 alertBox.style.background = 'rgba(239, 68, 68, 0.2)';
                 alertBox.style.borderColor = 'var(--danger-color)';
                 alertBox.style.color = 'var(--danger-color)';
-                alertBox.innerText = '⚡ 致命冷凝發生！水珠滴落引發短路';
+                alertBox.innerText = '⚡ 致命冷凝發生！水珠滴落引發短路\nFatal Condensation! Short Circuit Risk';
 
                 // 動畫與特效
                 pipeUi.style.background = '#0284c7'; // 水管變超冷藍色
@@ -562,7 +582,7 @@
                 alertBox.style.background = 'rgba(245, 158, 11, 0.2)';
                 alertBox.style.borderColor = 'var(--warn-color)';
                 alertBox.style.color = 'var(--warn-color)';
-                alertBox.innerText = '⚠ 警告：水溫逼近露點，結露風險極高';
+                alertBox.innerText = '⚠ 警告：水溫逼近露點，結露風險極高\nWarning: Coolant near Dew Point, High Risk';
 
                 pipeUi.style.background = '#38bdf8';
                 pipeOutUi.style.background = '#38bdf8';
@@ -579,7 +599,7 @@
                 alertBox.style.background = 'rgba(239, 68, 68, 0.2)';
                 alertBox.style.borderColor = 'var(--danger-color)';
                 alertBox.style.color = 'var(--danger-color)';
-                alertBox.innerText = '🔥 熱失控警告：水溫過高，GPU 嚴重降頻與老化';
+                alertBox.innerText = '🔥 熱失控警告：水溫過高，GPU 嚴重降頻\nThermal Alert: GPU Throttling Risk';
 
                 pipeUi.style.background = 'linear-gradient(90deg, #b91c1c, #ef4444, #b91c1c)';
                 pipeOutUi.style.background = 'linear-gradient(90deg, #b91c1c, #ef4444, #b91c1c)';
@@ -599,7 +619,7 @@
                 alertBox.style.background = 'rgba(16, 185, 129, 0.2)';
                 alertBox.style.borderColor = 'var(--safe-color)';
                 alertBox.style.color = 'var(--safe-color)';
-                alertBox.innerText = '✅ 安全綠區：無冷凝風險，散熱效能優良';
+                alertBox.innerText = '✅ 安全綠區：無冷凝風險，散熱效能優良\nSafe Zone: No Condensation, Optimal Cooling';
 
                 pipeUi.style.background = 'linear-gradient(90deg, #475569, #94a3b8, #475569)';
                 pipeOutUi.style.background = 'linear-gradient(90deg, #475569, #94a3b8, #475569)';
