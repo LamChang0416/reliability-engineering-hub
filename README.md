@@ -46,6 +46,12 @@ An interactive tool to calculate precise dew points for AI GPU liquid cooling sy
 - **Haptic & Visual Feedback**: Simulates critical environmental feedback for immersion.
 - **Offline PWA**: Installable as a standalone app for use in signal-less data centers or cleanrooms.
 
+### 7. Bathtub Curve Simulator
+An interactive business actuarial and reliability tool simulating the HALT Bathtub Curve.
+- **Financial Simulation**: Optimizes net profit by balancing Burn-in, BOM Quality, and RMA risks.
+- **Physics-of-Failure Engine**: Uses Arrhenius model for real-time expected life calculations.
+- **Dynamic Graphics**: Interactive bathtub curve chart responding to changes in early failure or wear-out periods.
+
 ## 📂 Project Structure
 - `index.html`: The central hub and entry point.
 - `tools/`: Individual engineering tools categorized by function.
@@ -55,6 +61,7 @@ An interactive tool to calculate precise dew points for AI GPU liquid cooling sy
   - `bga-fatigue-simulator.html`: BGA solder joint thermal fatigue simulator.
   - `vib_resonance.html`: Vibration resonance behavior and transmissibility simulator.
   - `cdu_dew_point.html`: AI Server CDU liquid cooling dew point simulator.
+  - `bathtub-curve-simulator.html`: Bathtub curve actuarial simulator for HALT testing and BOM cost.
 - `assets/`: Shared styles and branding elements.
 
 ## 📖 How to Use

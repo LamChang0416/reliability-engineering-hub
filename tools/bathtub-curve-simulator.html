@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>精算大師：HALT 浴缸曲線對賭模擬器</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --sys-color: #38bdf8;
+            /* 浴缸曲線主色 */
+            --warranty-color: #ef4444;
+            --profit-green: #22c55e;
+            --rma-red: #dc2626;
+            --status-glow: rgba(56, 189, 248, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        main {
+            width: 100%;
+            max-width: 700px;
+            background-color: var(--panel-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px var(--status-glow);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+            transition: box-shadow 0.3s ease;
+        }
+
+        /* 視覺核心：置中的浴缸曲線 */
+        figure {
+            width: 100%;
+            padding: 30px 20px 10px 20px;
+            background: #000;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            /* 確保 SVG 置中 */
+            border-bottom: 1px solid #334155;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 600px;
+            /* 限制最大寬度以保持比例完美 */
+            height: auto;
+            display: block;
+            overflow: visible;
+            /* 讓陰影不被裁切 */
+        }
+
+        .axis-line {
+            stroke: #334155;
+            stroke-width: 1;
+        }
+
+        .axis-text {
+            fill: var(--text-muted);
+            font-size: 4px;
+        }
+
+        .warranty-line {
+            stroke: var(--warranty-color);
+            stroke-width: 1.5;
+            stroke-dasharray: 2 2;
+        }
+
+        /* 浴缸曲線路徑設定 */
+        #path-bathtub {
+            fill: none;
+            stroke: var(--sys-color);
+            stroke-width: 3.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 6px var(--sys-color));
+            transition: d 0.3s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease, filter 0.3s ease;
+        }
+
+        .chart-labels {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+        }
+
+        /* 財務與控制面板配置 */
+        .dashboard-container {
+            padding: 20px;
+            display: grid;
+            gap: 20px;
+        }
+
+        /* 商業對賭面板 */
+        #finance-board {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 16px 24px;
+            border-radius: 12px;
+            border-left: 4px solid var(--sys-color);
+            transition: border-color 0.3s ease;
+        }
+
+        .fin-item {
+            text-align: center;
+        }
+
+        .fin-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .fin-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+
+        #net-profit {
+            font-size: 1.8rem;
+        }
+
+        .text-red {
+            color: var(--rma-red);
+        }
+
+        .text-green {
+            color: var(--profit-green);
+        }
+
+        /* 滑桿控制區 */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 500px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-group {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px 16px;
+            border-radius: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+        }
+
+        .control-header label {
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+
+        .val-badge {
+            color: var(--sys-color);
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--sys-color);
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+            transition: background 0.3s ease;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: #475569;
+            border-radius: 2px;
+        }
+
+        /* 戰鬥日誌 */
+        #status-log {
+            display: block;
+            background: #000;
+            padding: 16px 20px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            border-top: 1px solid #334155;
+            min-height: 90px;
+        }
+
+        /* 廣告與導覽區 */
+        .ad-banner {
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(56, 189, 248, 0.05);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .ad-banner p {
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+
+        .ad-links {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .ad-links a {
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-linkedin {
+            background-color: #0077b5;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 119, 181, 0.3);
+        }
+
+        .btn-linkedin:hover {
+            background-color: #005582;
+            transform: translateY(-2px);
+        }
+
+        .btn-hub {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-hub:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>浴缸曲線與商業精算模擬器</h1>
+        <div class="subtitle">Developed by Lam | Reliability Engineer</div>
+    </header>
+
+    <main>
+        <figure aria-label="系統浴缸曲線圖表">
+            <div class="chart-labels">
+                <span>← 早夭期 (Infant)</span>
+                <span>穩定期 (Useful Life)</span>
+                <span>耗損期 (Wear-out) →</span>
+            </div>
+            <svg viewBox="-5 0 130 85">
+                <line x1="0" y1="80" x2="120" y2="80" class="axis-line" />
+                <text x="0" y="88" class="axis-text">0m</text>
+                <text x="115" y="88" class="axis-text">120m</text>
+
+                <line x1="36" y1="5" x2="36" y2="80" class="warranty-line" />
+                <text x="37" y="10" class="axis-text" fill="#ef4444">36m 保固底線</text>
+
+                <path id="path-bathtub" d="" />
+            </svg>
+        </figure>
+
+        <div class="dashboard-container">
+            <section id="finance-board">
+                <div class="fin-item">
+                    <div class="fin-label">BOM 總成本</div>
+                    <div class="fin-value" id="bom-val">$120k</div>
+                </div>
+                <div class="fin-item">
+                    <div class="fin-label">RMA 賠償金</div>
+                    <div class="fin-value text-red" id="rma-val">$0</div>
+                </div>
+                <div class="fin-item">
+                    <div class="fin-label">最終淨利潤</div>
+                    <div class="fin-value text-green" id="net-profit">$380k</div>
+                </div>
+            </section>
+
+            <section class="controls-grid">
+                <div class="control-group">
+                    <div class="control-header">
+                        <label>產線：燒機時間 (Burn-in)</label>
+                        <span class="val-badge" id="lbl-burn">24 小時</span>
+                    </div>
+                    <input type="range" id="slider-burn" min="0" max="96" step="12" value="24" title="決定早夭期的高牆">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <label>用料：核心等級 (BOM Quality)</label>
+                        <span class="val-badge" id="lbl-bom">工業級</span>
+                    </div>
+                    <input type="range" id="slider-bom" min="24" max="144" step="12" value="60" title="決定穩定期的長短與底部平坦度">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <label>架構：熱降額裕度 (Derating)</label>
+                        <span class="val-badge" id="lbl-margin">標準 (20%)</span>
+                    </div>
+                    <input type="range" id="slider-margin" min="0" max="40" step="5" value="20" title="決定整體壽命極限">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <label>環境：客戶機房 (T_use)</label>
+                        <span class="val-badge" id="lbl-env">25°C</span>
+                    </div>
+                    <input type="range" id="slider-env" min="20" max="60" step="5" value="25" title="決定耗損期逼近的速度">
+                </div>
+            </section>
+        </div>
+
+        <output id="status-log">
+            > 系統啟動。請拖曳滑桿觀察浴缸曲線變形。<br>
+            > 目標：將死亡之牆完美貼齊保固底線，極大化公司利潤。
+        </output>
+
+        <!-- Personal Advertisement & Hub Navigation -->
+        <div class="ad-banner">
+            <p>💡 想了解更多可靠度工程的實戰經驗？</p>
+            <div class="ad-links">
+                <a href="https://www.linkedin.com/in/lam-chang-25b84920b" target="_blank" class="btn-linkedin">🔗 Connect Engineer Lam on LinkedIn</a>
+                <a href="../index.html" class="btn-hub">🏠 回到 Reliability Hub</a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // DOM Elements
+        const sBurn = document.getElementById('slider-burn');
+        const sBom = document.getElementById('slider-bom');
+        const sMargin = document.getElementById('slider-margin');
+        const sEnv = document.getElementById('slider-env');
+
+        const lBurn = document.getElementById('lbl-burn');
+        const lBom = document.getElementById('lbl-bom');
+        const lMargin = document.getElementById('lbl-margin');
+        const lEnv = document.getElementById('lbl-env');
+
+        const pathBathtub = document.getElementById('path-bathtub');
+        const valBom = document.getElementById('bom-val');
+        const valRma = document.getElementById('rma-val');
+        const valProfit = document.getElementById('net-profit');
+        const financeBoard = document.getElementById('finance-board');
+        const log = document.getElementById('status-log');
+        const root = document.documentElement;
+
+        // 物理常數與基準
+        const EA = 0.6;
+        const K = 8.617e-5;
+        const T_BASE = 298.15; // 25°C in Kelvin
+        const BASE_REVENUE = 600; // 單位 K
+
+        let prevRmaState = false;
+
+        // 生成 SVG 浴缸曲線路徑
+        function drawBathtubCurve(burnHrs, bomLife, marginPct, tempC) {
+            // 1. 物理學計算 (Arrhenius 加速因子)
+            const tempK = tempC + 273.15;
+            let afTemp = 1;
+            if (tempC > 25) {
+                afTemp = Math.exp((EA / K) * ((1 / T_BASE) - (1 / tempK)));
+            }
+
+            // 2. 決定「早夭期 (Infant Mortality)」：燒機越短，起點失效率越高，且越晚降到底部
+            const infantDefectRisk = Math.max(0, 100 - burnHrs); // 0~100 的風險值
+            const startY = 10 + (burnHrs * 0.5); // 燒機足夠則起始點較低(Y較大)
+            const flatStartX = Math.max(0, 20 - (burnHrs * 0.2)); // 平坦期開始的月份
+
+            // 3. 決定「穩定期與耗損期 (Useful & Wear-out)」
+            // 基礎壽命 + 降額裕度的加成，再除以環境加速因子
+            const baseLife = bomLife * (1 + (marginPct / 100));
+            const actualLife = baseLife / afTemp;
+            const endFlatX = Math.max(flatStartX + 1, actualLife - 10); // 死亡之牆開始爬升的點
+
+            // 限制最大繪圖範圍
+            const drawLife = Math.min(actualLife, 125);
+            const drawEndFlat = Math.min(endFlatX, 120);
+
+            // 底部平坦程度：料件越差，底部越不平坦(失效率整體墊高)
+            const flatY = 75 - ((144 - bomLife) * 0.1);
+
+            // 繪製貝茲曲線
+            const pathData = `
+                M 0 ${Math.max(10, startY - (infantDefectRisk * 0.5))} 
+                C ${flatStartX * 0.4} ${startY}, 
+                  ${flatStartX * 0.8} ${flatY}, 
+                  ${flatStartX} ${flatY} 
+                L ${drawEndFlat} ${flatY} 
+                C ${drawLife - 2} ${flatY}, 
+                  ${drawLife} ${flatY * 0.3}, 
+                  ${drawLife + 4} 5
+            `;
+
+            pathBathtub.setAttribute('d', pathData);
+
+            return { actualLife, infantDefectRisk };
+        }
+
+        function updateSystem() {
+            const burnHrs = parseInt(sBurn.value);
+            const bomLife = parseInt(sBom.value);
+            const marginPct = parseInt(sMargin.value);
+            const tempC = parseInt(sEnv.value);
+
+            // 更新 UI 標籤
+            lBurn.textContent = `${burnHrs} 小時`;
+            if (bomLife <= 36) lBom.textContent = "消費級";
+            else if (bomLife <= 84) lBom.textContent = "工業級";
+            else lBom.textContent = "軍規級";
+            lMargin.textContent = `${marginPct}%`;
+            lEnv.textContent = `${tempC}°C`;
+
+            // 繪製曲線並取得精算結果
+            const { actualLife, infantDefectRisk } = drawBathtubCurve(burnHrs, bomLife, marginPct, tempC);
+
+            // 商業精算
+            const costBurn = burnHrs * 0.5; // K
+            const costBom = (bomLife * 0.8) * (1 + (marginPct / 100));
+            const totalBomCost = Math.round(50 + costBurn + costBom);
+
+            let rmaCost = 0;
+            let isDOA = burnHrs < 12; // 燒機不足導致 DOA
+            let isEarlyFail = actualLife < 36;
+
+            if (isDOA) rmaCost += 200; // DOA 賠償
+            if (isEarlyFail) rmaCost += 800; // 保固內死機賠到脫褲
+
+            const netProfit = BASE_REVENUE - totalBomCost - rmaCost;
+
+            // 更新財務面板
+            valBom.textContent = `$${totalBomCost}k`;
+            valRma.textContent = `$${rmaCost}k`;
+            valProfit.textContent = `$${netProfit}k`;
+
+            // 狀態判定與 UI 顏色切換
+            let sysColor = '#38bdf8'; // 預設藍色
+            let logMsg = '';
+
+            if (netProfit < 0) {
+                // 災難狀態 (紅)
+                sysColor = '#ef4444';
+                valProfit.className = 'fin-value text-red';
+
+                if (isDOA) {
+                    logMsg = `<span style="color:#ef4444;font-weight:bold;">💥 【DOA 災難】為了省產線電費不燒機，早夭期跨越到客戶端！客訴灌爆！</span>`;
+                } else {
+                    logMsg = `<span style="color:#ef4444;font-weight:bold;">💥 【保固內崩潰】死亡之牆提早到來！RMA 賠償金徹底摧毀專案淨利！</span>`;
+                }
+
+                if (!prevRmaState && navigator.vibrate) {
+                    navigator.vibrate([200, 100, 400]); // 手機震動
+                }
+                prevRmaState = true;
+
+            } else {
+                // 存活狀態
+                prevRmaState = false;
+                if (actualLife >= 36 && actualLife <= 42 && !isDOA) {
+                    // 完美精算 (綠)
+                    sysColor = '#22c55e';
+                    valProfit.className = 'fin-value text-green';
+                    logMsg = `<span style="color:#22c55e;font-weight:bold;">✅ 【精算大師】死亡之牆完美貼合 36m。BOM 成本極低且避開 RMA，毛利極大化！</span>`;
+                } else if (actualLife > 80) {
+                    // 過度設計 (灰)
+                    sysColor = '#94a3b8';
+                    valProfit.className = 'fin-value';
+                    valProfit.style.color = '#94a3b8';
+                    logMsg = `<span style="color:#94a3b8;font-weight:bold;">⚠️ 【過度設計】系統活了 ${actualLife.toFixed(1)} 個月。百年燈泡重現，BOM 太貴導致淨利偏低。</span>`;
+                } else {
+                    // 一般狀態 (藍)
+                    valProfit.className = 'fin-value text-green';
+                    logMsg = `> 系統穩定。預期壽命 ${actualLife.toFixed(1)} 個月。請嘗試微調 BOM 或降額，挑戰最高淨利。`;
+                }
+            }
+
+            // 應用顏色切換
+            root.style.setProperty('--sys-color', sysColor);
+            root.style.setProperty('--status-glow', sysColor === '#0f172a' ? 'rgba(0,0,0,0)' : `${sysColor}33`); // 處理陰影透明度
+            financeBoard.style.borderLeftColor = sysColor;
+            log.innerHTML = logMsg;
+        }
+
+        // 綁定事件
+        [sBurn, sBom, sMargin, sEnv].forEach(el => el.addEventListener('input', updateSystem));
+
+        // 初始計算
+        updateSystem();
+    </script>
+</body>
+
+</html>
