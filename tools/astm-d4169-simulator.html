@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f172a">
+    <title>ASTM D4169-23 Test Plan Simulator | Developed by Lam</title>
+    <link rel="manifest" href="../manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --border-glow: rgba(56, 189, 248, 0.2);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --safe-color: #10b981;
+            --warn-color: #f59e0b;
+            --danger-color: #ef4444;
+            --accent-blue: #38bdf8;
+            --accent-green: #34d399;
+            --cardboard-brown: #d97706;
+            --metal-grey: #475569;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #1e293b, #020617);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        header {
+            grid-column: 1 / -1;
+            border-bottom: 2px solid var(--accent-blue);
+            padding-bottom: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem;
+            color: var(--text-main);
+            letter-spacing: 1px;
+            text-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        .global-toggles {
+            display: flex;
+            gap: 8px;
+        }
+
+        .toggle-btn {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .toggle-btn:hover {
+            color: #fff;
+            border-color: var(--accent-blue);
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+
+        .toggle-btn.active {
+            background-color: var(--accent-blue);
+            color: #020617;
+            border-color: var(--accent-blue);
+            font-weight: 700;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            color: var(--accent-blue);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .dim-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* Test sandbox container */
+        .sandbox-panel {
+            background-color: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sandbox-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sandbox-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            color: var(--accent-blue);
+            font-weight: bold;
+        }
+
+        .sandbox-status {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--accent-green);
+        }
+
+        .sandbox-view {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            background: radial-gradient(circle at center, #1e293b, #090d16);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Sandbox Physical Elements */
+        .sb-env-cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+            filter: blur(8px);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .cloud-1 { width: 80px; height: 30px; top: 20px; left: -100px; }
+        .cloud-2 { width: 120px; height: 40px; top: 50px; right: -150px; }
+
+        .sb-plane {
+            position: absolute;
+            width: 24px;
+            height: 12px;
+            opacity: 0;
+            top: 30px;
+            left: -30px;
+            color: rgba(255,255,255,0.4);
+            transition: opacity 0.5s;
+        }
+
+        .sb-rail-car {
+            position: absolute;
+            width: 110px;
+            height: 15px;
+            background: #334155;
+            bottom: 30px;
+            left: -150px;
+            border-radius: 3px;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            transition: transform 0.1s linear;
+        }
+        .sb-wheel {
+            width: 10px;
+            height: 10px;
+            background: #0f172a;
+            border-radius: 50%;
+            margin-bottom: -5px;
+            border: 2px solid #64748b;
+        }
+        .sb-bumper {
+            position: absolute;
+            width: 15px;
+            height: 40px;
+            background: #1e293b;
+            border-left: 4px solid var(--danger-color);
+            bottom: 30px;
+            right: -20px;
+            border-radius: 0 4px 4px 0;
+            transition: right 0.5s;
+        }
+
+        .sb-shaker {
+            position: absolute;
+            width: 160px;
+            height: 16px;
+            background: linear-gradient(180deg, var(--metal-grey), #1e293b);
+            bottom: 30px;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            z-index: 5;
+        }
+        .sb-shaker-label {
+            font-size: 0.55rem;
+            color: #94a3b8;
+            font-weight: bold;
+            margin-bottom: 2px;
+            letter-spacing: 0.5px;
+        }
+
+        .sb-box {
+            position: absolute;
+            width: 60px;
+            height: 50px;
+            background-color: var(--cardboard-brown);
+            border: 2px solid #92400e;
+            border-radius: 4px;
+            bottom: 46px; /* 30px base + 16px shaker */
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            transform-origin: bottom center;
+            transition: width 0.3s, height 0.3s, bottom 0.1s linear, transform 0.1s linear;
+        }
+        
+        /* Cardboard box tapes & markers */
+        .sb-box-tape {
+            position: absolute;
+            width: 100%;
+            height: 8px;
+            background-color: #78350f;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.6;
+        }
+        .sb-box-label {
+            font-family: sans-serif;
+            font-size: 8px;
+            color: #78350f;
+            border: 1px solid #78350f;
+            padding: 1px 2px;
+            background: rgba(255,255,255,0.1);
+            pointer-events: none;
+            z-index: 2;
+            font-weight: bold;
+        }
+
+        .sb-claw {
+            position: absolute;
+            width: 30px;
+            height: 10px;
+            background: #475569;
+            top: -20px;
+            border-radius: 2px;
+            z-index: 4;
+            transition: top 0.3s;
+        }
+        .sb-claw::before, .sb-claw::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 15px;
+            background: #475569;
+            bottom: -12px;
+        }
+        .sb-claw::before { left: 0; border-radius: 0 0 0 3px; }
+        .sb-claw::after { right: 0; border-radius: 0 0 3px 0; }
+
+        .sb-press-plate {
+            position: absolute;
+            width: 100px;
+            height: 10px;
+            background: linear-gradient(180deg, #64748b, #334155);
+            top: -20px;
+            border-radius: 2px;
+            z-index: 6;
+            border-bottom: 2px solid #cbd5e1;
+            transition: top 0.3s;
+        }
+
+        .sb-impactor {
+            position: absolute;
+            width: 12px;
+            height: 50px;
+            background: linear-gradient(90deg, #64748b, #cbd5e1, #334155);
+            top: -60px;
+            border-radius: 0 0 6px 6px;
+            z-index: 7;
+            transition: top 0.2s ease-in;
+        }
+
+        .sb-impactor-flash {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, #fff 0%, rgba(239, 68, 68, 0.8) 50%, transparent 100%);
+            bottom: 40px;
+            z-index: 12;
+            display: none;
+            border-radius: 50%;
+        }
+
+        /* Digital gauge overlay */
+        .sb-gauge-overlay {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(2, 6, 23, 0.75);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            color: var(--accent-blue);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .sb-gauge-value {
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .sb-dust {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            bottom: 46px;
+            opacity: 0;
+            z-index: 11;
+        }
+
+        /* Animations classes */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -1px) rotate(-0.5deg); }
+            20% { transform: translate(-2px, 0px) rotate(0.5deg); }
+            30% { transform: translate(1px, 1px) rotate(0deg); }
+            40% { transform: translate(-1px, -1px) rotate(0.5deg); }
+            50% { transform: translate(2px, 1px) rotate(-0.5deg); }
+            60% { transform: translate(-1px, 0px) rotate(0deg); }
+            70% { transform: translate(1px, -1px) rotate(0.5deg); }
+            80% { transform: translate(-1px, 1px) rotate(-0.5deg); }
+            90% { transform: translate(2px, -1px) rotate(0deg); }
+            100% { transform: translate(1px, 1px) rotate(0.5deg); }
+        }
+        .shake-fast {
+            animation: shake 0.15s infinite;
+        }
+        .shake-slow {
+            animation: shake 0.3s infinite;
+        }
+
+        /* Results panel styling */
+        #results-panel {
+            border-top: 4px solid var(--accent-blue);
+        }
+
+        .result-header {
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dc-title-display {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warn-color);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .schedule-list {
+            list-style: none;
+            counter-reset: step-counter;
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .schedule-list li {
+            position: relative;
+            padding: 14px 16px 14px 44px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .schedule-list li:hover {
+            background: rgba(56, 189, 248, 0.05);
+            border-color: rgba(56, 189, 248, 0.3);
+            transform: translateX(4px);
+        }
+
+        .schedule-list li.active-step {
+            background: rgba(56, 189, 248, 0.1);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+        }
+
+        .schedule-list li::before {
+            counter-increment: step-counter;
+            content: counter(step-counter);
+            position: absolute;
+            left: 16px;
+            top: 14px;
+            color: var(--accent-blue);
+            font-weight: 800;
+            font-size: 0.95rem;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Action buttons next to items */
+        .btn-play-step {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: var(--accent-blue);
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .schedule-list li:hover .btn-play-step {
+            opacity: 1;
+        }
+        .btn-play-step:hover {
+            transform: translateY(-50%) scale(1.2);
+            color: var(--accent-green);
+        }
+
+        .param-highlight {
+            color: var(--accent-green);
+            font-weight: 700;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            margin-left: 4px;
+            display: inline-block;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+        }
+
+        .schedule-title {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+            color: var(--text-main);
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+            padding-bottom: 4px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+
+        .meta-spec-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.8rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+
+        .meta-spec-box strong {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .meta-spec-box span {
+            color: var(--text-main);
+            font-weight: 600;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .compliance-note {
+            background: rgba(56, 189, 248, 0.05);
+            border-left: 4px solid var(--accent-blue);
+            padding: 14px;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+
+        /* Ad banner style */
+        .ad-banner {
+            margin-top: 24px;
+            padding: 16px;
+            background: rgba(56, 189, 248, 0.03);
+            border: 1px solid rgba(56, 189, 248, 0.15);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .ad-banner p {
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+
+        .ad-links {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .ad-links a {
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-linkedin {
+            background-color: #0077b5;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 119, 181, 0.2);
+        }
+
+        .btn-linkedin:hover {
+            background-color: #005582;
+            transform: translateY(-2px);
+        }
+
+        .btn-hub {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-hub:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .footer span {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent-blue);
+            font-weight: bold;
+        }
+
+        /* Auto-run bar */
+        .sim-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-action {
+            flex: 1;
+            background-color: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: var(--accent-blue);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn-action:hover {
+            background-color: var(--accent-blue);
+            color: #020617;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+        }
+        .btn-action:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+        <header>
+            <div>
+                <h1 id="txt-title">ASTM D4169-23 Test Plan Generator</h1>
+                <div class="subtitle" id="txt-subtitle">Standard Practice for Performance Testing of Shipping Containers and Systems</div>
+            </div>
+            <div class="global-toggles">
+                <button id="toggle-lang" class="toggle-btn">ZH / EN</button>
+                <button id="toggle-len" class="toggle-btn active">m</button>
+                <button id="toggle-wt" class="toggle-btn active">kg</button>
+            </div>
+        </header>
+
+        <section class="panel">
+            <h2 id="sect-params">Parameters Configuration</h2>
+
+            <div class="form-group">
+                <label id="lbl-weight">Gross Weight</label>
+                <input type="number" id="inp-weight" value="15.0" min="0.01" step="0.1">
+            </div>
+
+            <div class="form-group">
+                <label id="lbl-dims">Dimensions (L x W x H)</label>
+                <div class="dim-inputs">
+                    <input type="number" id="inp-l" value="0.50" step="0.01">
+                    <input type="number" id="inp-w" value="0.40" step="0.01">
+                    <input type="number" id="inp-h" value="0.30" step="0.01">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label id="lbl-dc">Distribution Cycle (DC)</label>
+                <select id="inp-dc"></select>
+            </div>
+
+            <div class="form-group">
+                <label id="lbl-al">Assurance Level (AL)</label>
+                <select id="inp-al">
+                    <option value="1">Level I (High Intensity / Low Probability)</option>
+                    <option value="2" selected>Level II (Medium Intensity / Standard)</option>
+                    <option value="3">Level III (Low Intensity / High Probability)</option>
+                </select>
+            </div>
+
+            <!-- Test Sandbox Panel inside settings column -->
+            <div class="sandbox-panel">
+                <div class="sandbox-header">
+                    <div class="sandbox-title" id="sb-title">TEST RIG SANDBOX</div>
+                    <div class="sandbox-status" id="sb-status">STATUS: READY</div>
+                </div>
+                <div class="sandbox-view" id="sandbox-view">
+                    <!-- Gauge overlay -->
+                    <div class="sb-gauge-overlay" id="sb-gauge">
+                        <div id="gauge-lbl-1">ALTITUDE: <span class="sb-gauge-value" id="gauge-val-1">0 FT</span></div>
+                        <div id="gauge-lbl-2">PRESSURE: <span class="sb-gauge-value" id="gauge-val-2">101.3 kPa</span></div>
+                    </div>
+
+                    <!-- Cloud backgrounds for high altitude -->
+                    <div class="sb-env-cloud cloud-1" id="cloud-1"></div>
+                    <div class="sb-env-cloud cloud-2" id="cloud-2"></div>
+                    <svg class="sb-plane" id="sb-plane" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+                    </svg>
+
+                    <!-- Impactor -->
+                    <div class="sb-impactor" id="sb-impactor"></div>
+                    <div class="sb-impactor-flash" id="sb-impactor-flash"></div>
+
+                    <!-- Mechanical claw for drops -->
+                    <div class="sb-claw" id="sb-claw"></div>
+
+                    <!-- Compression plate -->
+                    <div class="sb-press-plate" id="sb-press-plate"></div>
+
+                    <!-- Railcar -->
+                    <div class="sb-rail-car" id="sb-rail-car">
+                        <div class="sb-wheel"></div>
+                        <div class="sb-wheel"></div>
+                    </div>
+                    <div class="sb-bumper" id="sb-bumper"></div>
+
+                    <!-- Shaker table and packaging box -->
+                    <div class="sb-shaker" id="sb-shaker">
+                        <span class="sb-shaker-label" id="sb-shaker-lbl">SHAKER PLATFORM</span>
+                    </div>
+                    <div class="sb-box" id="sb-box">
+                        <div class="sb-box-tape"></div>
+                        <div class="sb-box-label" id="sb-box-lbl">FRAGILE</div>
+                    </div>
+
+                    <!-- Dust particles -->
+                    <div class="sb-dust" id="dust-l"></div>
+                    <div class="sb-dust" id="dust-r"></div>
+                </div>
+                <div class="sim-actions">
+                    <button class="btn-action" id="btn-run-seq">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        <span id="txt-run-seq">Run Full Test Sequence</span>
+                    </button>
+                    <button class="btn-action" id="btn-reset-sim" style="flex:0.4;">
+                        <span id="txt-reset-sim">Reset</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel" id="results-panel">
+            <h2 id="sect-sequence">Calculated Test Sequence</h2>
+
+            <div class="result-header">
+                <div class="dc-title-display" id="out-dc">DC-13</div>
+                <div id="small-badge" class="badge" style="display:none;">Small & Lightweight</div>
+            </div>
+
+            <div class="meta-spec-box">
+                <div><strong><span id="meta-lbl-wt">Normalized Weight</span>:</strong> <span id="out-weight">-</span></div>
+                <div><strong><span id="meta-lbl-vol">Calculated Volume</span>:</strong> <span id="out-volume">-</span></div>
+            </div>
+
+            <ul class="schedule-list" id="out-schedules"></ul>
+
+            <div class="compliance-note" id="out-note"></div>
+
+            <!-- Networking & Advertisements -->
+            <div class="ad-banner">
+                <p id="ad-text">💡 Welcome back to Reliability Engineering Hub to explore more simulators!</p>
+                <div class="ad-links">
+                    <a href="../index.html" class="btn-hub" id="ad-btn-hub">🏠 Back to Reliability Hub</a>
+                    <a href="https://www.linkedin.com/in/reliability-engineering-hub/" target="_blank" class="btn-linkedin" id="ad-btn-li">🤝 Connect on LinkedIn</a>
+                </div>
+            </div>
+
+            <div class="footer">
+                Developed by <span>Lam | Reliability Engineer</span><br>
+                Built for #VibeCoding & #ReliabilityTesting
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const i18n = {
+            en: {
+                title: "ASTM D4169-23 Test Plan Generator", 
+                subtitle: "Standard Practice for Performance Testing of Shipping Containers and Systems",
+                params: "Parameters Configuration", 
+                sequence: "Calculated Test Sequence", 
+                weight: "Gross Weight", 
+                dims: "Dimensions", 
+                dc: "Distribution Cycle (DC)", 
+                al: "Assurance Level (AL)",
+                smallPackage: "Small & Lightweight Package", 
+                calcWeight: "Normalized Weight", 
+                calcVol: "Calculated Volume",
+                finalDropNote: "Note: The final handling sequence impact requires 2X the specified drop height or equivalent velocity change.",
+                lowPressNote: "Schedule I may be omitted if primary packaging consists of porous materials.",
+                milNote: "DC-18 governs non-commercial government transport. Refer to Annex A1.",
+
+                // Sandbox Texts
+                sbTitle: "TEST RIG SANDBOX",
+                sbStatusReady: "STATUS: READY",
+                sbStatusSim: "STATUS: SIMULATING...",
+                sbStatusDone: "STATUS: TEST COMPLETE",
+                sbBtnRun: "Run Full Sequence",
+                sbBtnReset: "Reset",
+                gaugeAlt: "ALTITUDE",
+                gaugePress: "PRESSURE",
+                gaugeForce: "FORCE",
+                gaugeGrms: "VIBRATION",
+                gaugeVel: "VELOCITY",
+
+                // Detailed Parameter Labels
+                lblDropHt: "Drop Height", 
+                lblRotDrop: "Rotational Drop Height", 
+                lblLoad: "Target Compressive Load",
+                lblGrmsTruck: "Truck Grms", 
+                lblGrmsAir: "Air Profile", 
+                lblDuration: "Duration", 
+                lblAltitude: "Simulated Altitude",
+                valAirProfile: "3-Tier Dynamic Profile (AL Independent)",
+
+                schedules: {
+                    A_MANUAL: "Schedule A - Manual Handling", 
+                    A_MECH: "Schedule A - Mechanical Handling",
+                    B_WH: "Schedule B - Warehouse Stacking", 
+                    C_VEH: "Schedule C - Vehicle Stacking (Compression)",
+                    D_STK_VIB: "Schedule D - Stacked Vibration", 
+                    E_VEH_VIB: "Schedule E - Vehicle Vibration (Random)",
+                    F_LOOSE: "Schedule F - Loose-Load Vibration", 
+                    G_RAIL: "Schedule G - Rail Switching",
+                    I_LOW_P: "Schedule I - Low Pressure (High Altitude)", 
+                    J_IMPACT: "Schedule J - Concentrated Impact"
+                },
+                alOptions: ["Level I (High Intensity)", "Level II (Standard Intensity)", "Level III (Low Intensity)"],
+                exceedsManual: "Weight exceeds manual limits (>200 lb). Adjusted to Mechanical.",
+                dcGroups: { g1: "General & Custom", g2: "Motor Freight", g3: "Rail Freight", g4: "Air & Motor Freight", g5: "Ocean & Warehousing", g6: "Military" },
+                dcNames: {
+                    "DC-1": "DC-1: General Cycle", 
+                    "DC-2": "DC-2: User Specified", 
+                    "DC-3": "DC-3: Single pkg, LTL motor", 
+                    "DC-4": "DC-4: Single pkg with pallet, LTL",
+                    "DC-5": "DC-5: Motor TL, not unitized", 
+                    "DC-6": "DC-6: Motor TL/LTL, unitized", 
+                    "DC-7": "DC-7: Rail only, bulk", 
+                    "DC-8": "DC-8: Rail only, unitized",
+                    "DC-9": "DC-9: Rail & motor, not unitized", 
+                    "DC-10": "DC-10: Rail & motor, unitized", 
+                    "DC-11": "DC-11: Rail, TOFC/COFC",
+                    "DC-12": "DC-12: Air & motor, >150 lb or unitized", 
+                    "DC-13": "DC-13: Air & motor, up to 150 lb", 
+                    "DC-14": "DC-14: Warehousing",
+                    "DC-15": "DC-15: Export/Import, intermodal", 
+                    "DC-16": "DC-16: Export/Import, palletized ship", 
+                    "DC-17": "DC-17: Export/Import, break bulk ship", 
+                    "DC-18": "DC-18: Government/Military"
+                },
+                adText: "💡 Welcome back to Reliability Engineering Hub to explore more simulators!",
+                adBtnHub: "🏠 Back to Reliability Hub",
+                adBtnLi: "🤝 Connect on LinkedIn",
+                customSchedule: "Custom parameters based on service conditions."
+            },
+            zh: {
+                title: "ASTM D4169-23 測試計畫產生器", 
+                subtitle: "運輸貨櫃與系統性能測試標準實務",
+                params: "參數配置", 
+                sequence: "機台設定與測試排程", 
+                weight: "總重量", 
+                dims: "外觀尺寸", 
+                dc: "物流運輸週期 (DC)", 
+                al: "保證等級 (AL)",
+                smallPackage: "小型輕量化包裹", 
+                calcWeight: "標準化重量", 
+                calcVol: "計算容積",
+                finalDropNote: "規範提醒：最後一次 Schedule A 搬運程序，其撞擊必須以 2 倍指定高度執行。",
+                lowPressNote: "若主包裝含多孔性材料，可豁免 Schedule I 高空低壓測試。",
+                milNote: "DC-18 適用軍方物資運輸，請嚴格遵循 Annex A1。",
+
+                // Sandbox Texts
+                sbTitle: "測試環境模擬沙盒",
+                sbStatusReady: "狀態：就緒",
+                sbStatusSim: "狀態：測試模擬中...",
+                sbStatusDone: "狀態：測試模擬完成",
+                sbBtnRun: "播放完整測試序列",
+                sbBtnReset: "重設",
+                gaugeAlt: "模擬高度",
+                gaugePress: "環境氣壓",
+                gaugeForce: "下壓荷重",
+                gaugeGrms: "隨機震動強度",
+                gaugeVel: "衝擊速度",
+
+                // Detailed Parameter Labels
+                lblDropHt: "落下高度", 
+                lblRotDrop: "旋轉平面落下高度", 
+                lblLoad: "目標下壓負載",
+                lblGrmsTruck: "卡車隨機震動", 
+                lblGrmsAir: "空運隨機震動", 
+                lblDuration: "測試時間", 
+                lblAltitude: "模擬高空艙壓",
+                valAirProfile: "3-Tier 動態切換 (無 AL 區分)",
+
+                schedules: {
+                    A_MANUAL: "Schedule A - 人工搬運", 
+                    A_MECH: "Schedule A - 機械搬運",
+                    B_WH: "Schedule B - 倉庫堆疊壓縮", 
+                    C_VEH: "Schedule C - 車廂堆疊壓縮",
+                    D_STK_VIB: "Schedule D - 堆疊隨機震動", 
+                    E_VEH_VIB: "Schedule E - 車輛與空運隨機震動",
+                    F_LOOSE: "Schedule F - 鬆散負載震動", 
+                    G_RAIL: "Schedule G - 鐵路調車衝擊",
+                    I_LOW_P: "Schedule I - 高空低壓危害", 
+                    J_IMPACT: "Schedule J - 集中衝擊"
+                },
+                alOptions: ["等級 I (高測試強度)", "等級 II (標準測試強度)", "等級 III (低測試強度)"],
+                exceedsManual: "重量超出人工搬運極限 (>90.7 kg)，已切換至機械搬運。",
+                dcGroups: { g1: "通用與自定義週期", g2: "卡車陸運", g3: "鐵路貨運", g4: "空運與地區陸運", g5: "海運與倉儲", g6: "軍規" },
+                dcNames: {
+                    "DC-1": "DC-1: 通用物流週期", 
+                    "DC-2": "DC-2: 使用者自定義", 
+                    "DC-3": "DC-3: 單一包裹，零擔卡車", 
+                    "DC-4": "DC-4: 單一包裹附棧板，零擔卡車",
+                    "DC-5": "DC-5: 整車直達，未打棧板", 
+                    "DC-6": "DC-6: 整車直達或打棧板", 
+                    "DC-7": "DC-7: 純鐵路，散裝堆疊", 
+                    "DC-8": "DC-8: 純鐵路，打棧板",
+                    "DC-9": "DC-9: 鐵路與卡車，未打棧板", 
+                    "DC-10": "DC-10: 鐵路與卡車，打棧板", 
+                    "DC-11": "DC-11: 鐵路平車馱載",
+                    "DC-12": "DC-12: 空陸聯運，>68.1kg 或打棧板", 
+                    "DC-13": "DC-13: 空陸聯運，<68.1kg 單一包裹", 
+                    "DC-14": "DC-14: 倉儲狀態",
+                    "DC-15": "DC-15: 海運聯運貨櫃", 
+                    "DC-16": "DC-16: 海運棧板貨船", 
+                    "DC-17": "DC-17: 海運傳統散裝", 
+                    "DC-18": "DC-18: 軍方物資運輸"
+                },
+                adText: "💡 歡迎回到 Reliability Engineering Hub 探索更多模擬器！",
+                adBtnHub: "🏠 回到 Reliability Hub",
+                adBtnLi: "🤝 在 LinkedIn 上聯絡我",
+                customSchedule: "依據實際運輸條件自訂規格。"
+            }
+        };
+
+        let currentLang = 'en', unitLen = 'm', unitWt = 'kg';
+
+        const dom = {
+            title: document.getElementById('txt-title'), 
+            sub: document.getElementById('txt-subtitle'), 
+            params: document.getElementById('sect-params'), 
+            seq: document.getElementById('sect-sequence'),
+            lWt: document.getElementById('lbl-weight'), 
+            lDim: document.getElementById('lbl-dims'), 
+            lDc: document.getElementById('lbl-dc'), 
+            lAl: document.getElementById('lbl-al'),
+            smallBadge: document.getElementById('small-badge'), 
+            iWt: document.getElementById('inp-weight'), 
+            iL: document.getElementById('inp-l'), 
+            iW: document.getElementById('inp-w'),
+            iH: document.getElementById('inp-h'), 
+            iDc: document.getElementById('inp-dc'), 
+            iAl: document.getElementById('inp-al'), 
+            oDc: document.getElementById('out-dc'),
+            oWeight: document.getElementById('out-weight'),
+            oVolume: document.getElementById('out-volume'),
+            oSched: document.getElementById('out-schedules'), 
+            oNote: document.getElementById('out-note'),
+            btnLang: document.getElementById('toggle-lang'), 
+            btnLen: document.getElementById('toggle-len'), 
+            btnWt: document.getElementById('toggle-wt'),
+            
+            // Ad / Branding Buttons
+            adText: document.getElementById('ad-text'),
+            adBtnHub: document.getElementById('ad-btn-hub'),
+            adBtnLi: document.getElementById('ad-btn-li'),
+
+            // Sandbox Elements
+            sbTitle: document.getElementById('sb-title'),
+            sbStatus: document.getElementById('sb-status'),
+            sbGauge: document.getElementById('sb-gauge'),
+            gaugeLbl1: document.getElementById('gauge-lbl-1'),
+            gaugeVal1: document.getElementById('gauge-val-1'),
+            gaugeLbl2: document.getElementById('gauge-lbl-2'),
+            gaugeVal2: document.getElementById('gauge-val-2'),
+            shaker: document.getElementById('sb-shaker'),
+            shakerLbl: document.getElementById('sb-shaker-lbl'),
+            box: document.getElementById('sb-box'),
+            boxLbl: document.getElementById('sb-box-lbl'),
+            claw: document.getElementById('sb-claw'),
+            plate: document.getElementById('sb-press-plate'),
+            impactor: document.getElementById('sb-impactor'),
+            flash: document.getElementById('sb-impactor-flash'),
+            railCar: document.getElementById('sb-rail-car'),
+            bumper: document.getElementById('sb-bumper'),
+            cloud1: document.getElementById('cloud-1'),
+            cloud2: document.getElementById('cloud-2'),
+            plane: document.getElementById('sb-plane'),
+            dustL: document.getElementById('dust-l'),
+            dustR: document.getElementById('dust-r'),
+            btnRunSeq: document.getElementById('btn-run-seq'),
+            btnResetSim: document.getElementById('btn-reset-sim'),
+            txtRunSeq: document.getElementById('txt-run-seq'),
+            txtResetSim: document.getElementById('txt-reset-sim'),
+            metaLblWt: document.getElementById('meta-lbl-wt'),
+            metaLblVol: document.getElementById('meta-lbl-vol')
+        };
+
+        const dcMatrix = {
+            "DC-1": ["A_CHOOSE", "D", "F", "G", "J", "A_FINAL_CHOOSE"], 
+            "DC-2": ["CUSTOM"], 
+            "DC-3": ["A_MANUAL", "CE_OR_D", "F", "J", "A_MANUAL_FINAL"],
+            "DC-4": ["A_MECH", "CE_VIB", "D_F_J", "A_MECH_FINAL"], 
+            "DC-5": ["A_CHOOSE", "D", "E", "J", "A_FINAL_CHOOSE"], 
+            "DC-6": ["A_CHOOSE", "CE_VIB", "D_OR_J", "A_FINAL_CHOOSE", "B"],
+            "DC-7": ["A_CHOOSE", "D", "G", "A_FINAL_CHOOSE", "B"], 
+            "DC-8": ["A_CHOOSE", "D", "G", "A_FINAL_CHOOSE", "B"], 
+            "DC-9": ["A_CHOOSE", "C", "E", "G", "F", "J", "A_FINAL_CHOOSE"],
+            "DC-10": ["A_CHOOSE", "D", "G", "J", "A_FINAL_CHOOSE", "B"], 
+            "DC-11": ["A_CHOOSE", "G", "D", "F", "A_FINAL_CHOOSE"], 
+            "DC-12": ["A_MECH", "D", "I", "E", "J", "A_MECH_FINAL"],
+            "DC-13": ["A_MANUAL", "C", "F", "I", "E", "J", "A_MANUAL_FINAL"], 
+            "DC-14": ["A_CHOOSE", "B"], 
+            "DC-15": ["A_CHOOSE", "C", "A_FINAL_CHOOSE"],
+            "DC-16": ["A_CHOOSE", "C", "A_FINAL_CHOOSE"], 
+            "DC-17": ["A_CHOOSE", "C", "A_FINAL_CHOOSE"], 
+            "DC-18": ["MIL"]
+        };
+
+        // Animation State Manager
+        let isSimulating = false;
+        let simTimeline = null;
+        let calculatedSequence = [];
+
+        function initDropdowns() {
+            const lang = i18n[currentLang];
+            const curAl = dom.iAl.value || "2", curDc = dom.iDc.value || "DC-13";
+            dom.iAl.innerHTML = lang.alOptions.map((t, i) => `<option value="${i + 1}">${t}</option>`).join('');
+            dom.iAl.value = curAl;
+
+            let html = "";
+            for (let i = 1; i <= 6; i++) {
+                html += `<optgroup label="${lang.dcGroups['g' + i]}">`;
+                Object.keys(lang.dcNames).forEach(k => {
+                    let group = 1;
+                    if (k.match(/DC-[3-6]/)) group = 2; else if (k.match(/DC-(7|8|9|10|11)/)) group = 3;
+                    else if (k.match(/DC-1[23]/)) group = 4; else if (k.match(/DC-1[4-7]/)) group = 5; else if (k === "DC-18") group = 6;
+                    if (group === i) html += `<option value="${k}">${lang.dcNames[k]}</option>`;
+                });
+                html += `</optgroup>`;
+            }
+            dom.iDc.innerHTML = html;
+            dom.iDc.value = curDc;
+        }
+
+        // --- Physics Calculation Engines ---
+        function calcDrop(lb, al, isMech) {
+            let inch = 0;
+            if (isMech) {
+                inch = (lb <= 500) ? (al === 1 ? 12 : al === 2 ? 9 : 6) : (al === 1 ? 9 : al === 2 ? 6 : 3);
+            } else {
+                if (lb < 20) inch = al === 1 ? 24 : al === 2 ? 15 : 9;
+                else if (lb < 40) inch = al === 1 ? 21 : al === 2 ? 13 : 8;
+                else if (lb < 60) inch = al === 1 ? 18 : al === 2 ? 12 : 7;
+                else if (lb < 80) inch = al === 1 ? 15 : al === 2 ? 10 : 6;
+                else if (lb < 100) inch = al === 1 ? 12 : al === 2 ? 9 : 5;
+                else if (lb <= 200) inch = al === 1 ? 10 : al === 2 ? 7 : 4;
+                else return null;
+            }
+            return { in: inch, mm: Math.round(inch * 25.4) };
+        }
+
+        function calcComp(lM, wM, hM) {
+            if (hM >= 2.7) return { kg: 0, n: 0, lb: 0 };
+            let kg = 160 * (2.7 - hM) * (lM * wM);
+            return { kg: Math.round(kg), n: Math.round(kg * 9.80665), lb: Math.round(kg * 2.20462) };
+        }
+
+        function updateUI() {
+            const lang = i18n[currentLang];
+            dom.title.textContent = lang.title; 
+            dom.sub.textContent = lang.subtitle; 
+            dom.params.textContent = lang.params; 
+            dom.seq.textContent = lang.sequence;
+            dom.lWt.textContent = `${lang.weight} (${unitWt})`; 
+            dom.lDim.textContent = `${lang.dims} (${unitLen})`; 
+            dom.lDc.textContent = lang.dc; 
+            dom.lAl.textContent = lang.al;
+
+            // Update Sandbox text
+            dom.sbTitle.textContent = lang.sbTitle;
+            if (!isSimulating) {
+                dom.sbStatus.textContent = lang.sbStatusReady;
+            }
+            dom.txtRunSeq.textContent = lang.sbBtnRun;
+            dom.txtResetSim.textContent = lang.sbBtnReset;
+            dom.metaLblWt.textContent = lang.calcWeight;
+            dom.metaLblVol.textContent = lang.calcVol;
+
+            // Update Ads
+            dom.adText.textContent = lang.adText;
+            dom.adBtnHub.textContent = lang.adBtnHub;
+            dom.adBtnLi.textContent = lang.adBtnLi;
+
+            let wt = parseFloat(dom.iWt.value) || 0, L = parseFloat(dom.iL.value) || 0, W = parseFloat(dom.iW.value) || 0, H = parseFloat(dom.iH.value) || 0;
+            let kg = unitWt === 'lb' ? wt / 2.20462 : wt, lb = unitWt === 'kg' ? wt * 2.20462 : wt;
+            let lM = unitLen === 'cm' ? L / 100 : L, wM = unitLen === 'cm' ? W / 100 : W, hM = unitLen === 'cm' ? H / 100 : H;
+            let volM3 = lM * wM * hM, volFt = volM3 * 35.3147;
+
+            const dc = dom.iDc.value, al = parseInt(dom.iAl.value);
+            const isSmall = (kg < 4.53 && volM3 < 0.056 && ["DC-2", "DC-3", "DC-4", "DC-6", "DC-9", "DC-13", "DC-14", "DC-15", "DC-16", "DC-17"].includes(dc));
+            dom.smallBadge.style.display = isSmall ? 'inline-block' : 'none';
+            dom.smallBadge.textContent = lang.smallPackage;
+            dom.oWeight.innerHTML = `${kg.toFixed(2)} kg / ${lb.toFixed(1)} lb`;
+            dom.oVolume.innerHTML = `${volM3.toFixed(4)} m³ / ${volFt.toFixed(2)} ft³`;
+            dom.oDc.textContent = dc;
+
+            let html = "";
+            calculatedSequence = [];
+            
+            (dcMatrix[dc] || []).forEach((c, index) => {
+                let s = lang.schedules, d = null;
+                let stepLabel = "";
+                let stepType = c;
+                let stepData = {};
+
+                // Helper for Drop Output
+                const renderDrop = (isMech, isFinal) => {
+                    d = calcDrop(lb, al, isMech);
+                    let prefix = isMech ? s.A_MECH : s.A_MANUAL;
+                    if (!isMech && !d) { 
+                        prefix = `${s.A_MECH} [${lang.exceedsManual}]`; 
+                        d = calcDrop(lb, al, true); 
+                        stepType = "A_MECH";
+                    }
+                    if (isFinal) {
+                        prefix += " (Final)";
+                        stepType = isMech ? "A_MECH_FINAL" : "A_MANUAL_FINAL";
+                    }
+                    let lbl = isMech ? lang.lblRotDrop : lang.lblDropHt;
+                    
+                    stepData = { height: d.in, mm: d.mm, isMech: isMech };
+                    return `<span class="schedule-title">${prefix}</span> ${lbl}: <span class="param-highlight">${d.in} in (${d.mm} mm)</span>`;
+                };
+
+                // Helper for Compression Output
+                const renderComp = () => {
+                    let cp = calcComp(lM, wM, hM);
+                    stepData = { forceN: cp.n, forceKg: cp.kg };
+                    return `<span class="schedule-title">${s.C_VEH}</span> ${lang.lblLoad}: <span class="param-highlight">${cp.n} N (${cp.kg} kg)</span>`;
+                };
+
+                // Helper for Random Vibration Output
+                const renderVibE = () => {
+                    let grmsT = al === 1 ? "0.73" : al === 2 ? "0.52" : "0.37";
+                    let str = `<span class="schedule-title">${s.E_VEH_VIB}</span> ${lang.lblGrmsTruck}: <span class="param-highlight">${grmsT} Grms</span>`;
+                    if (dc === "DC-12" || dc === "DC-13") str += `<br>${lang.lblGrmsAir}: <span class="param-highlight">${lang.valAirProfile}</span>`;
+                    stepData = { grms: grmsT, isAir: (dc === "DC-12" || dc === "DC-13") };
+                    return str;
+                };
+
+                switch (c) {
+                    case "A_MANUAL": stepLabel = renderDrop(false, false); break;
+                    case "A_MANUAL_FINAL": stepLabel = renderDrop(false, true); break;
+                    case "A_MECH": stepLabel = renderDrop(true, false); break;
+                    case "A_MECH_FINAL": stepLabel = renderDrop(true, true); break;
+                    case "A_CHOOSE": stepLabel = renderDrop(lb > 200, false); break;
+                    case "A_FINAL_CHOOSE": stepLabel = renderDrop(lb > 200, true); break;
+
+                    case "C": stepLabel = renderComp(); break;
+                    case "E": stepLabel = renderVibE(); break;
+                    case "CE_VIB": 
+                        let cp = calcComp(lM, wM, hM);
+                        let grmsVal = al === 1 ? "0.73" : al === 2 ? "0.52" : "0.37";
+                        stepLabel = `<span class="schedule-title">${s.C_VEH} & ${s.E_VEH_VIB}</span> ${lang.lblLoad}: <span class="param-highlight">${cp.n} N</span> / Vibration: <span class="param-highlight">${grmsVal} Grms</span>`;
+                        stepData = { forceN: cp.n, grms: grmsVal };
+                        break;
+                    case "CE_OR_D": 
+                        let cp2 = calcComp(lM, wM, hM);
+                        stepLabel = `<span class="schedule-title">${s.D_STK_VIB} OR ${s.C_VEH}</span> Stacked Vibe or Static Load: <span class="param-highlight">${cp2.n} N</span>`;
+                        stepData = { forceN: cp2.n, grms: al === 1 ? "0.73" : al === 2 ? "0.52" : "0.37" };
+                        break;
+
+                    case "F":
+                        let fMin = al === 1 ? 60 : al === 2 ? 40 : 30;
+                        stepLabel = `<span class="schedule-title">${s.F_LOOSE}</span> ${lang.lblDuration}: <span class="param-highlight">${fMin} mins</span>`;
+                        stepData = { duration: fMin, loose: true };
+                        break;
+                    case "J":
+                        let jIn = al === 1 ? 32 : al === 2 ? 24 : 16;
+                        stepLabel = `<span class="schedule-title">${s.J_IMPACT}</span> ${lang.lblDropHt}: <span class="param-highlight">${jIn} in (${Math.round(jIn * 25.4)} mm)</span>`;
+                        stepData = { height: jIn, mm: Math.round(jIn * 25.4), isImpact: true };
+                        break;
+                    case "I": 
+                        stepLabel = `<span class="schedule-title">${s.I_LOW_P}</span> ${lang.lblAltitude}: <span class="param-highlight">~70 kPa (10,000 ft) / 60 mins</span>`; 
+                        stepData = { alt: 10000, press: 70 };
+                        break;
+
+                    case "D": 
+                        stepLabel = `<span class="schedule-title">${s.D_STK_VIB}</span> Stacked Vibration Profile (Assurance Level ${al})`; 
+                        stepData = { grms: al === 1 ? "0.60" : al === 2 ? "0.45" : "0.30", stacked: true };
+                        break;
+                    case "G": 
+                        let rVel = al === 1 ? "8.0" : al === 2 ? "6.0" : "4.0";
+                        stepLabel = `<span class="schedule-title">${s.G_RAIL}</span> Switching Impact Velocity: <span class="param-highlight">${rVel} mph</span>`; 
+                        stepData = { velocity: rVel };
+                        break;
+                    case "B": 
+                        let fFactor = al === 1 ? 6 : al === 2 ? 4.5 : 3;
+                        stepLabel = `<span class="schedule-title">${s.B_WH}</span> Warehouse Compressive Factor (F): <span class="param-highlight">${fFactor}</span>`; 
+                        stepData = { factor: fFactor, warehouse: true };
+                        break;
+
+                    case "D_OR_J": 
+                        stepLabel = `<span class="schedule-title">${s.D_STK_VIB} OR ${s.J_IMPACT}</span> Stacking Vibration or Concentrated Impact`; 
+                        stepData = { isImpact: true, height: al === 1 ? 32 : al === 2 ? 24 : 16 };
+                        break;
+                    case "D_F_J": 
+                        stepLabel = `<span class="schedule-title">${s.D_STK_VIB} OR ${s.F_LOOSE} OR ${s.J_IMPACT}</span> Stacking / Loose / Concentrated Impact`; 
+                        stepData = { loose: true, duration: 40 };
+                        break;
+                    case "CUSTOM": 
+                        stepLabel = `<span class="schedule-title">${s.CUSTOM || "Custom"}</span> ${lang.customSchedule}`; 
+                        stepData = { custom: true };
+                        break;
+                    case "MIL": 
+                        stepLabel = `<span class="schedule-title">DC-18 Military Transport</span> ${lang.milNote}`; 
+                        stepData = { mil: true };
+                        break;
+                }
+
+                calculatedSequence.push({ type: stepType, label: stepLabel, data: stepData });
+
+                html += `<li onclick="playSimulationStep(${index})" id="step-item-${index}">
+                    ${stepLabel}
+                    <button class="btn-play-step" title="Simulate this step">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    </button>
+                </li>`;
+            });
+            dom.oSched.innerHTML = html;
+
+            let foot = "ASTM D4169-23 Verified. ";
+            if (["DC-1", "DC-3", "DC-4", "DC-5", "DC-6", "DC-7", "DC-8", "DC-9", "DC-10", "DC-11", "DC-12", "DC-13", "DC-15", "DC-16", "DC-17"].includes(dc)) foot += lang.finalDropNote + " ";
+            if (dc === "DC-12" || dc === "DC-13") foot += lang.lowPressNote;
+            dom.oNote.innerHTML = foot;
+        }
+
+        // --- Sandbox Physical Simulator Logic ---
+        function resetSandbox() {
+            isSimulating = false;
+            if (simTimeline) clearTimeout(simTimeline);
+            
+            // Reset status text
+            dom.sbStatus.textContent = i18n[currentLang].sbStatusReady;
+            dom.sbStatus.style.color = 'var(--accent-green)';
+            
+            // Remove highlight classes
+            document.querySelectorAll('.schedule-list li').forEach(el => el.classList.remove('active-step'));
+
+            // Reset elements properties
+            dom.box.className = 'sb-box';
+            dom.box.style.bottom = '46px';
+            dom.box.style.transform = 'none';
+            dom.box.style.opacity = '1';
+            dom.box.style.width = '60px';
+            dom.box.style.height = '50px';
+            dom.boxLbl.textContent = 'FRAGILE';
+            
+            dom.shaker.className = 'sb-shaker';
+            dom.shaker.style.transform = 'none';
+            
+            dom.claw.style.top = '-20px';
+            dom.plate.style.top = '-20px';
+            dom.impactor.style.top = '-60px';
+            dom.flash.style.display = 'none';
+            
+            dom.railCar.style.left = '-150px';
+            dom.bumper.style.right = '-20px';
+            
+            dom.cloud1.style.opacity = '0';
+            dom.cloud2.style.opacity = '0';
+            dom.plane.style.opacity = '0';
+            dom.plane.style.left = '-30px';
+
+            dom.dustL.style.opacity = '0';
+            dom.dustR.style.opacity = '0';
+
+            // Reset digital readouts
+            dom.gaugeVal1.textContent = '0 FT';
+            dom.gaugeVal2.textContent = '101.3 kPa';
+            dom.gaugeLbl1.innerHTML = `${i18n[currentLang].gaugeAlt}: <span class="sb-gauge-value" id="gauge-val-1">0 FT</span>`;
+            dom.gaugeLbl2.innerHTML = `${i18n[currentLang].gaugePress}: <span class="sb-gauge-value" id="gauge-val-2">101.3 kPa</span>`;
+            
+            // Re-fetch variables in case we need them
+            dom.gaugeVal1 = document.getElementById('gauge-val-1');
+            dom.gaugeVal2 = document.getElementById('gauge-val-2');
+        }
+
+        function runStepAnimation(stepIndex, onComplete) {
+            resetSandbox();
+            
+            isSimulating = true;
+            dom.sbStatus.textContent = i18n[currentLang].sbStatusSim;
+            dom.sbStatus.style.color = 'var(--warn-color)';
+
+            // Highlight step list item
+            const stepEl = document.getElementById(`step-item-${stepIndex}`);
+            if (stepEl) stepEl.classList.add('active-step');
+
+            const step = calculatedSequence[stepIndex];
+            if (!step) {
+                if (onComplete) onComplete();
+                return;
+            }
+
+            const type = step.type;
+            const data = step.data;
+
+            // Determine which animation to run
+            if (type.includes("A_MANUAL") || type.includes("A_MECH")) {
+                // DROP TEST
+                let dropHt = data.height || 15;
+                let isMech = data.isMech || false;
+                
+                dom.gaugeLbl1.innerHTML = `${i18n[currentLang].lblDropHt}: <span class="sb-gauge-value" id="gauge-val-1">${dropHt} in</span>`;
+                dom.gaugeLbl2.innerHTML = `TYPE: <span class="sb-gauge-value" id="gauge-val-2">${isMech ? "MECHANICAL" : "MANUAL"}</span>`;
+                dom.gaugeVal1 = document.getElementById('gauge-val-1');
+                dom.gaugeVal2 = document.getElementById('gauge-val-2');
+
+                // Step 1: Claw moves down to grab box
+                dom.claw.style.top = '40px';
+                
+                simTimeline = setTimeout(() => {
+                    // Step 2: Claw lifts the box
+                    dom.claw.style.top = '10px';
+                    dom.box.style.bottom = '76px';
+                    
+                    simTimeline = setTimeout(() => {
+                        // Step 3: Box falls
+                        dom.claw.style.top = '-20px'; // retract claw
+                        dom.box.style.bottom = '46px'; // drop box
+                        
+                        simTimeline = setTimeout(() => {
+                            // Step 4: Hit impact!
+                            dom.shaker.classList.add('shake-fast');
+                            dom.box.classList.add('shake-fast');
+                            
+                            // Spray dust particles
+                            dom.dustL.style.opacity = '1';
+                            dom.dustL.style.left = '35%';
+                            dom.dustL.style.transform = 'translate(-40px, -20px)';
+                            dom.dustL.style.transition = 'all 0.4s ease-out';
+                            
+                            dom.dustR.style.opacity = '1';
+                            dom.dustR.style.left = '65%';
+                            dom.dustR.style.transform = 'translate(40px, -20px)';
+                            dom.dustR.style.transition = 'all 0.4s ease-out';
+
+                            simTimeline = setTimeout(() => {
+                                dom.shaker.classList.remove('shake-fast');
+                                dom.box.classList.remove('shake-fast');
+                                dom.dustL.style.opacity = '0';
+                                dom.dustR.style.opacity = '0';
+                                dom.dustL.style.left = '45%';
+                                dom.dustL.style.transform = 'none';
+                                dom.dustL.style.transition = 'none';
+                                dom.dustR.style.left = '55%';
+                                dom.dustR.style.transform = 'none';
+                                dom.dustR.style.transition = 'none';
+
+                                if (onComplete) onComplete();
+                            }, 500);
+                        }, 150); // fast drop duration
+                    }, 800);
+                }, 500);
+
+            } else if (type === "C" || type === "B" || type === "CE_VIB" || type === "CE_OR_D") {
+                // COMPRESSION / STACKING TEST
+                let forceN = data.forceN || 1200;
+                
+                dom.gaugeLbl1.innerHTML = `${i18n[currentLang].gaugeForce}: <span class="sb-gauge-value" id="gauge-val-1">0 N</span>`;
+                dom.gaugeLbl2.innerHTML = `STATUS: <span class="sb-gauge-value" id="gauge-val-2">COMPRESSING</span>`;
+                dom.gaugeVal1 = document.getElementById('gauge-val-1');
+                dom.gaugeVal2 = document.getElementById('gauge-val-2');
+
+                // Plate descends
+                dom.plate.style.top = '70px';
+
+                let currentForce = 0;
+                let forceInterval = setInterval(() => {
+                    currentForce += Math.round(forceN / 15);
+                    if (currentForce >= forceN) {
+                        currentForce = forceN;
+                        clearInterval(forceInterval);
+                    }
+                    if (dom.gaugeVal1) dom.gaugeVal1.textContent = `${currentForce} N`;
+                }, 80);
+
+                simTimeline = setTimeout(() => {
+                    // Box squishes slightly
+                    dom.box.style.height = '44px';
+                    dom.box.style.bottom = '46px';
+                    dom.box.style.transform = 'scaleY(0.88)';
+                    
+                    simTimeline = setTimeout(() => {
+                        // Release
+                        dom.plate.style.top = '-20px';
+                        dom.box.style.height = '50px';
+                        dom.box.style.transform = 'none';
+                        if (dom.gaugeVal2) dom.gaugeVal2.textContent = 'RELEASED';
+                        clearInterval(forceInterval);
+
+                        simTimeline = setTimeout(() => {
+                            if (onComplete) onComplete();
+                        }, 500);
+                    }, 1500);
+                }, 1000);
+
+            } else if (type === "E" || type === "D" || type === "F") {
+                // VIBRATION TESTS
+                let grms = data.grms || "0.52";
+                let isLoose = data.loose || false;
+                
+                dom.gaugeLbl1.innerHTML = `${i18n[currentLang].gaugeGrms}: <span class="sb-gauge-value" id="gauge-val-1">${grms} Grms</span>`;
+                dom.gaugeLbl2.innerHTML = `TYPE: <span class="sb-gauge-value" id="gauge-val-2">${isLoose ? "LOOSE-LOAD" : "RANDOM"}</span>`;
+                dom.gaugeVal1 = document.getElementById('gauge-val-1');
+                dom.gaugeVal2 = document.getElementById('gauge-val-2');
+
+                if (isLoose) {
+                    // Loose load: box bounces off platform
+                    dom.shaker.classList.add('shake-slow');
+                    dom.box.classList.add('shake-slow');
+                    
+                    let bounceCount = 0;
+                    let bounceInterval = setInterval(() => {
+                        dom.box.style.bottom = (bounceCount % 2 === 0) ? '54px' : '46px';
+                        bounceCount++;
+                    }, 150);
+
+                    simTimeline = setTimeout(() => {
+                        clearInterval(bounceInterval);
+                        dom.shaker.classList.remove('shake-slow');
+                        dom.box.classList.remove('shake-slow');
+                        dom.box.style.bottom = '46px';
+                        if (onComplete) onComplete();
+                    }, 3000);
+                } else {
+                    // Random vibration: high freq shaking
+                    dom.shaker.classList.add('shake-fast');
+                    dom.box.classList.add('shake-fast');
+
+                    simTimeline = setTimeout(() => {
+                        dom.shaker.classList.remove('shake-fast');
+                        dom.box.classList.remove('shake-fast');
+                        if (onComplete) onComplete();
+                    }, 3000);
+                }
+
+            } else if (type === "I") {
+                // ALTITUDE LOW PRESSURE TEST
+                dom.gaugeLbl1.innerHTML = `${i18n[currentLang].gaugeAlt}: <span class="sb-gauge-value" id="gauge-val-1">0 FT</span>`;
+                dom.gaugeLbl2.innerHTML = `${i18n[currentLang].gaugePress}: <span class="sb-gauge-value" id="gauge-val-2">101.3 kPa</span>`;
+                dom.gaugeVal1 = document.getElementById('gauge-val-1');
+                dom.gaugeVal2 = document.getElementById('gauge-val-2');
+
+                dom.cloud1.style.opacity = '1';
+                dom.cloud2.style.opacity = '1';
+                dom.cloud1.style.left = '400px';
+                dom.cloud1.style.transition = 'left 4s linear';
+                dom.cloud2.style.right = '400px';
+                dom.cloud2.style.transition = 'right 4s linear';
+
+                // Plane flies by
+                dom.plane.style.opacity = '1';
+                dom.plane.style.left = '450px';
+                dom.plane.style.transition = 'left 3s linear 0.5s';
+
+                let currentAlt = 0;
+                let altInterval = setInterval(() => {
+                    currentAlt += 500;
+                    let currentPress = 101.3 * (1 - currentAlt / 45000);
+                    if (currentPress < 70) currentPress = 70.0;
+                    
+                    if (dom.gaugeVal1) dom.gaugeVal1.textContent = `${currentAlt.toLocaleString()} FT`;
+                    if (dom.gaugeVal2) dom.gaugeVal2.textContent = `${currentPress.toFixed(1)} kPa`;
+
+                    if (currentAlt >= 10000) {
+                        clearInterval(altInterval);
+                    }
+                }, 150);
+
+                // Box expands slightly under vacuum pressure
+                simTimeline = setTimeout(() => {
+                    dom.box.style.transform = 'scale(1.08)';
+                    dom.boxLbl.textContent = 'PRESSURE SWELL';
+                    dom.box.style.borderColor = 'var(--warn-color)';
+
+                    simTimeline = setTimeout(() => {
+                        dom.box.style.transform = 'none';
+                        dom.boxLbl.textContent = 'FRAGILE';
+                        dom.box.style.borderColor = '#92400e';
+                        clearInterval(altInterval);
+                        if (onComplete) onComplete();
+                    }, 1800);
+                }, 2000);
+
+            } else if (type === "J" || type.includes("J")) {
+                // CONCENTRATED IMPACT
+                let impactHt = data.height || 24;
+                
+                dom.gaugeLbl1.innerHTML = `${i18n[currentLang].lblDropHt}: <span class="sb-gauge-value" id="gauge-val-1">${impactHt} in</span>`;
+                dom.gaugeLbl2.innerHTML = `STATUS: <span class="sb-gauge-value" id="gauge-val-2">ARMED</span>`;
+                dom.gaugeVal1 = document.getElementById('gauge-val-1');
+                dom.gaugeVal2 = document.getElementById('gauge-val-2');
+
+                dom.impactor.style.left = '48.5%';
+                dom.impactor.style.top = '-20px';
+
+                simTimeline = setTimeout(() => {
+                    // Impactor falls
+                    dom.impactor.style.top = '96px'; // impact box height
+                    
+                    simTimeline = setTimeout(() => {
+                        // Flash & hit!
+                        dom.flash.style.left = '47.5%';
+                        dom.flash.style.display = 'block';
+                        dom.box.classList.add('shake-fast');
+                        if (dom.gaugeVal2) dom.gaugeVal2.textContent = 'IMPACT!';
+
+                        simTimeline = setTimeout(() => {
+                            dom.flash.style.display = 'none';
+                            dom.box.classList.remove('shake-fast');
+                            dom.impactor.style.top = '-60px'; // Retract
+
+                            if (onComplete) onComplete();
+                        }, 800);
+                    }, 200);
+                }, 800);
+
+            } else if (type === "G") {
+                // RAIL SWITCHING IMPACT
+                dom.gaugeLbl1.innerHTML = `${i18n[currentLang].gaugeVel}: <span class="sb-gauge-value" id="gauge-val-1">0 mph</span>`;
+                dom.gaugeLbl2.innerHTML = `STATUS: <span class="sb-gauge-value" id="gauge-val-2">ROLLING</span>`;
+                dom.gaugeVal1 = document.getElementById('gauge-val-1');
+                dom.gaugeVal2 = document.getElementById('gauge-val-2');
+
+                // Move shaker platform down/hide, show rail & bumper
+                dom.shaker.style.transition = 'bottom 0.4s';
+                dom.shaker.style.bottom = '-40px';
+                
+                // Hide standard box and attach to railcar
+                dom.box.style.opacity = '0';
+                
+                dom.bumper.style.right = '10px';
+
+                simTimeline = setTimeout(() => {
+                    // Slide railcar
+                    dom.railCar.style.left = '60px';
+                    dom.railCar.style.transition = 'left 1s ease-in';
+                    
+                    // Create box clone on railcar
+                    const boxClone = document.createElement('div');
+                    boxClone.className = 'sb-box';
+                    boxClone.style.bottom = '14px';
+                    boxClone.style.left = '25px';
+                    boxClone.style.opacity = '1';
+                    dom.railCar.appendChild(boxClone);
+
+                    let speed = 0;
+                    let speedInterval = setInterval(() => {
+                        speed += 1.5;
+                        if (speed > 6.0) speed = 6.0;
+                        if (dom.gaugeVal1) dom.gaugeVal1.textContent = `${speed.toFixed(1)} mph`;
+                    }, 200);
+
+                    simTimeline = setTimeout(() => {
+                        clearInterval(speedInterval);
+                        // Hit bumper!
+                        dom.railCar.classList.add('shake-fast');
+                        boxClone.classList.add('shake-fast');
+                        if (dom.gaugeVal2) dom.gaugeVal2.textContent = 'COLLISION!';
+
+                        // Shock ring flash
+                        dom.flash.style.left = '160px';
+                        dom.flash.style.bottom = '30px';
+                        dom.flash.style.display = 'block';
+
+                        simTimeline = setTimeout(() => {
+                            dom.flash.style.display = 'none';
+                            dom.railCar.classList.remove('shake-fast');
+                            boxClone.classList.remove('shake-fast');
+                            
+                            // Return shaker view
+                            dom.railCar.removeChild(boxClone);
+                            dom.railCar.style.left = '-150px';
+                            dom.railCar.style.transition = 'none';
+                            dom.bumper.style.right = '-20px';
+                            
+                            dom.shaker.style.bottom = '30px';
+                            dom.box.style.opacity = '1';
+
+                            if (onComplete) onComplete();
+                        }, 1000);
+                    }, 1000);
+                }, 500);
+
+            } else {
+                // GENERAL CUSTOM / MILITARY SIMULATION
+                dom.gaugeLbl1.innerHTML = `STANDARD: <span class="sb-gauge-value" id="gauge-val-1">ASTM D4169</span>`;
+                dom.gaugeLbl2.innerHTML = `STATUS: <span class="sb-gauge-value" id="gauge-val-2">SIMULATING</span>`;
+                dom.gaugeVal1 = document.getElementById('gauge-val-1');
+                dom.gaugeVal2 = document.getElementById('gauge-val-2');
+
+                dom.shaker.classList.add('shake-slow');
+                dom.box.classList.add('shake-slow');
+
+                simTimeline = setTimeout(() => {
+                    dom.shaker.classList.remove('shake-slow');
+                    dom.box.classList.remove('shake-slow');
+                    if (onComplete) onComplete();
+                }, 1500);
+            }
+        }
+
+        function playSimulationStep(stepIndex) {
+            if (isSimulating) {
+                resetSandbox();
+            }
+            runStepAnimation(stepIndex, () => {
+                isSimulating = false;
+                dom.sbStatus.textContent = i18n[currentLang].sbStatusDone;
+                dom.sbStatus.style.color = 'var(--accent-green)';
+            });
+        }
+
+        function runFullSequence() {
+            if (calculatedSequence.length === 0) return;
+            resetSandbox();
+            
+            dom.btnRunSeq.disabled = true;
+            let currentStep = 0;
+
+            function nextStep() {
+                if (currentStep >= calculatedSequence.length) {
+                    resetSandbox();
+                    dom.btnRunSeq.disabled = false;
+                    dom.sbStatus.textContent = i18n[currentLang].sbStatusDone;
+                    dom.sbStatus.style.color = 'var(--accent-green)';
+                    return;
+                }
+                runStepAnimation(currentStep, () => {
+                    currentStep++;
+                    simTimeline = setTimeout(nextStep, 800); // delay between steps
+                });
+            }
+
+            nextStep();
+        }
+
+        // --- Page Event Listeners & Bootstrapping ---
+        dom.btnLang.addEventListener('click', () => { 
+            currentLang = currentLang === 'en' ? 'zh' : 'en'; 
+            initDropdowns(); 
+            updateUI(); 
+            resetSandbox();
+        });
+        
+        dom.btnLen.addEventListener('click', () => {
+            let L = parseFloat(dom.iL.value) || 0, W = parseFloat(dom.iW.value) || 0, H = parseFloat(dom.iH.value) || 0;
+            if (unitLen === 'm') { 
+                unitLen = 'cm'; 
+                dom.btnLen.textContent = 'cm'; 
+                dom.iL.value = (L * 100).toFixed(1); 
+                dom.iW.value = (W * 100).toFixed(1); 
+                dom.iH.value = (H * 100).toFixed(1); 
+            } else { 
+                unitLen = 'm'; 
+                dom.btnLen.textContent = 'm'; 
+                dom.iL.value = (L / 100).toFixed(2); 
+                dom.iW.value = (W / 100).toFixed(2); 
+                dom.iH.value = (H / 100).toFixed(2); 
+            }
+            updateUI();
+            resetSandbox();
+        });
+
+        dom.btnWt.addEventListener('click', () => {
+            let Wt = parseFloat(dom.iWt.value) || 0;
+            if (unitWt === 'kg') { 
+                unitWt = 'lb'; 
+                dom.btnWt.textContent = 'lb'; 
+                dom.iWt.value = (Wt * 2.20462).toFixed(1); 
+            } else { 
+                unitWt = 'kg'; 
+                dom.btnWt.textContent = 'kg'; 
+                dom.iWt.value = (Wt / 2.20462).toFixed(1); 
+            }
+            updateUI();
+            resetSandbox();
+        });
+
+        dom.btnRunSeq.addEventListener('click', runFullSequence);
+        dom.btnResetSim.addEventListener('click', resetSandbox);
+
+        [dom.iWt, dom.iL, dom.iW, dom.iH, dom.iDc, dom.iAl].forEach(el => { 
+            el.addEventListener('input', () => { updateUI(); resetSandbox(); }); 
+            el.addEventListener('change', () => { updateUI(); resetSandbox(); }); 
+        });
+
+        // Initialize App
+        initDropdowns(); 
+        updateUI();
+        resetSandbox();
+
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('../sw.js').then(registration => {
+                    console.log('SW registered: ', registration);
+                }).catch(registrationError => {
+                    console.log('SW registration failed: ', registrationError);
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>

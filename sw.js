@@ -1,8 +1,9 @@
-const CACHE_NAME = 'cdu-simulator-v2';
+const CACHE_NAME = 'reliability-hub-v3';
 const urlsToCache = [
     './',
     './index.html',
     './tools/cdu_dew_point.html',
+    './tools/astm-d4169-simulator.html',
     './manifest.json',
     './cdu_icon.png'
 ];
