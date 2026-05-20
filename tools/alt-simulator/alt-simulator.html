@@ -218,6 +218,51 @@
         .modal-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         .modal-table th, .modal-table td { border-bottom: 1px solid #334155; padding: 12px; text-align: left; }
         
+        /* Ad banner style */
+        .ad-banner {
+            grid-column: 1 / -1;
+            margin-top: 10px;
+            padding: 16px;
+            background: rgba(56, 189, 248, 0.03);
+            border: 1px solid rgba(56, 189, 248, 0.15);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .ad-banner p {
+            margin: 0 0 12px 0;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+
+        .ad-links {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .ad-links a {
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-hub {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-hub:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
         @media (max-width: 850px) {
             .dashboard { grid-template-columns: 1fr; padding: 20px; }
             .header { flex-direction: column; align-items: flex-start; gap: 15px; }
@@ -289,6 +334,13 @@
 
     <div class="chart-container">
         <canvas id="timeChart"></canvas>
+    </div>
+
+    <div class="ad-banner">
+        <p>💡 Welcome back to Reliability Engineering Hub to explore more simulators!</p>
+        <div class="ad-links">
+            <a href="../../index.html" class="btn-hub">🏠 Back to Reliability Hub</a>
+        </div>
     </div>
 
     <div class="footer">

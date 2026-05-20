@@ -462,6 +462,50 @@
             font-weight: bold;
         }
 
+        /* Ad banner style */
+        .ad-banner {
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(56, 189, 248, 0.03);
+            border: 1px solid rgba(56, 189, 248, 0.15);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .ad-banner p {
+            margin: 0 0 12px 0;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+
+        .ad-links {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .ad-links a {
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-hub {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-hub:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
         @media (max-width: 768px) {
             .comparison-grid {
                 grid-template-columns: 1fr;
@@ -567,6 +611,13 @@
                     <button class="strat-btn" data-mode="dampen" onclick="setStrategy('dampen')">增加阻尼<br><span
                             style="font-size: 0.75rem; font-weight:normal;">(吸收並壓平峰值)</span></button>
                 </div>
+            </div>
+        </div>
+
+        <div class="ad-banner">
+            <p>💡 Welcome back to Reliability Engineering Hub to explore more simulators!</p>
+            <div class="ad-links">
+                <a href="../index.html" class="btn-hub">🏠 Back to Reliability Hub</a>
             </div>
         </div>
 

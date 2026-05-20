@@ -840,7 +840,6 @@
                 <p id="ad-text">💡 Welcome back to Reliability Engineering Hub to explore more simulators!</p>
                 <div class="ad-links">
                     <a href="../index.html" class="btn-hub" id="ad-btn-hub">🏠 Back to Reliability Hub</a>
-                    <a href="https://www.linkedin.com/in/reliability-engineering-hub/" target="_blank" class="btn-linkedin" id="ad-btn-li">🤝 Connect on LinkedIn</a>
                 </div>
             </div>
 
@@ -1043,7 +1042,6 @@
             // Ad / Branding Buttons
             adText: document.getElementById('ad-text'),
             adBtnHub: document.getElementById('ad-btn-hub'),
-            adBtnLi: document.getElementById('ad-btn-li'),
 
             // Sandbox Elements
             sbTitle: document.getElementById('sb-title'),
@@ -1170,7 +1168,6 @@
             // Update Ads
             dom.adText.textContent = lang.adText;
             dom.adBtnHub.textContent = lang.adBtnHub;
-            dom.adBtnLi.textContent = lang.adBtnLi;
 
             let wt = parseFloat(dom.iWt.value) || 0, L = parseFloat(dom.iL.value) || 0, W = parseFloat(dom.iW.value) || 0, H = parseFloat(dom.iH.value) || 0;
             let kg = unitWt === 'lb' ? wt / 2.20462 : wt, lb = unitWt === 'kg' ? wt * 2.20462 : wt;

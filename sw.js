@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reliability-hub-v3';
+const CACHE_NAME = 'reliability-hub-v4';
 const urlsToCache = [
     './',
     './index.html',
