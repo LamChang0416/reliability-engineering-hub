@@ -64,6 +64,12 @@ An interactive tool to generate and simulate ASTM D4169-23 shipping container pe
 - **Interactive Sandbox**: Watch package animations simulating drops (Schedule A/J), stacking compression (Schedule B/C), random vibration (Schedule D/E/F), low pressure (Schedule I), and rail impact shock (Schedule G).
 - **Dual Language**: Seamlessly toggle between English and Traditional Chinese for reports.
 
+#### 9. Drop Test Engineering Mode
+An interactive tool to perform post-drop test functional verification of a smartphone via Web APIs.
+- **Hardware Verification**: Test touch screen, physical volume buttons, and vibration motor.
+- **Connectivity Check**: Verify Wi-Fi network status and Bluetooth API availability.
+- **Engineering Interface**: Minimalist UI for quick Pass/Fail testing.
+
 ### 📂 Project Structure
 - `index.html`: The central hub and entry point.
 - `tools/`: Individual engineering tools categorized by function.
@@ -75,6 +81,7 @@ An interactive tool to generate and simulate ASTM D4169-23 shipping container pe
   - `cdu_dew_point.html`: AI Server CDU liquid cooling dew point simulator.
   - `bathtub-curve-simulator.html`: Bathtub curve actuarial simulator for HALT testing and BOM cost.
   - `astm-d4169-simulator.html`: ASTM D4169-23 shipping test sequence generator and simulator.
+  - `drop-test.html`: Smartphone drop test functional verification tool.
 - `assets/`: Shared styles and branding elements.
 
 ### 📖 How to Use
@@ -147,6 +154,12 @@ AI 伺服器水冷 CDU 液冷架構專用的微氣候與冷凝風險計算器。
 - **互動測試沙盒**：可實時點選或順序播放落摔 (Schedule A/J)、壓縮堆疊 (Schedule B/C)、隨機震動 (Schedule D/E/F)、高空艙壓 (Schedule I) 及鐵路衝擊 (Schedule G) 的動態物理測試動畫。
 - **雙語切換**：支援英文及繁體中文一鍵切換，便於撰寫多國測試計畫。
 
+#### 9. 落下測試工程模式 (Drop Test Engineering Mode)
+透過網頁 API (Web APIs) 直接進行手機落下測試後的硬體功能驗證。
+- **硬體驗證**：測試觸控螢幕（畫布網格）、實體音量鍵與震動馬達。
+- **連線檢查**：快速讀取 Wi-Fi 連線狀態與底層藍牙掃描 API。
+- **工程介面**：極簡無干擾的 UI，快速判定 Pass/Fail。
+
 ### 📂 專案目錄結構
 - `index.html`: 首頁與主要入口儀表板。
 - `tools/`: 各項工程工具。
@@ -158,6 +171,7 @@ AI 伺服器水冷 CDU 液冷架構專用的微氣候與冷凝風險計算器。
   - `cdu_dew_point.html`: AI 伺服器 CDU 水冷結露風險模擬器。
   - `bathtub-curve-simulator.html`: 浴缸曲線與 BOM 成本精算模擬器。
   - `astm-d4169-simulator.html`: ASTM D4169-23 運輸測試計畫模擬器。
+  - `drop-test.html`: 手機落下測試硬體驗證工具。
 - `assets/`: 共用樣式與品牌視覺資源。
 
 ### 📖 如何使用
