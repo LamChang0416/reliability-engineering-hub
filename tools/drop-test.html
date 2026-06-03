@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Drop Test Engineering Mode</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #121212;
@@ -126,6 +127,58 @@
             justify-content: space-around;
             background: #000;
         }
+
+        /* Ad banner style */
+        .ad-banner {
+            margin: 30px 20px;
+            padding: 16px;
+            background: rgba(56, 189, 248, 0.05);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 12px;
+            text-align: center;
+            font-family: 'Inter', sans-serif;
+        }
+        .ad-banner p {
+            margin: 0 0 12px 0;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+        .ad-links {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .ad-links a {
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-hub {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .btn-hub:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .footer { 
+            text-align: center; 
+            margin-top: 30px; 
+            margin-bottom: 30px;
+            font-size: 0.85rem; 
+            color: #888;
+            font-family: 'Inter', sans-serif;
+        }
+        .footer span { 
+            font-weight: bold;
+            color: #38bdf8;
+        }
     </style>
 </head>
 <body>
@@ -153,6 +206,18 @@
             <span id="status-bluetooth" class="status">--</span>
         </li>
     </ul>
+
+    <div class="ad-banner">
+        <p>💡 Welcome back to Reliability Engineering Hub to explore more simulators!</p>
+        <div class="ad-links">
+            <a href="../index.html" class="btn-hub">🏠 Back to Reliability Hub</a>
+        </div>
+    </div>
+
+    <div class="footer">
+        Developed by <span>Lam | Reliability Engineer</span><br>
+        Built for #VibeCoding & #PhysicsOfFailure
+    </div>
 
     <!-- Touch Test View -->
     <div id="view-touch" class="test-view">
