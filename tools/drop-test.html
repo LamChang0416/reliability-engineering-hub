@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drop Test Engineering Mode</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #00ff00;
+            --border-color: #333;
+            --pass-color: #00ff00;
+            --fail-color: #ff3333;
+            --btn-bg: #222;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        h1 {
+            text-align: center;
+            border-bottom: 2px solid var(--border-color);
+            padding: 15px 10px;
+            margin: 0;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+        }
+        .menu-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .menu-item {
+            border-bottom: 1px solid var(--border-color);
+            padding: 25px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        .menu-item:active {
+            background-color: #333;
+        }
+        .status {
+            font-weight: bold;
+            color: #888;
+        }
+        .status.pass { color: var(--pass-color); }
+        .status.fail { color: var(--fail-color); }
+
+        /* Test views */
+        .test-view {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color);
+            z-index: 100;
+            flex-direction: column;
+        }
+        .test-header {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        .test-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .action-btn {
+            background: var(--btn-bg);
+            color: var(--text-color);
+            border: 2px solid var(--text-color);
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-family: inherit;
+            margin: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .action-btn:active { background: var(--text-color); color: var(--bg-color); }
+
+        .result-btns {
+            display: flex;
+            gap: 20px;
+            margin-top: 40px;
+        }
+        .btn-pass { border-color: var(--pass-color); color: var(--pass-color); }
+        .btn-fail { border-color: var(--fail-color); color: var(--fail-color); }
+        .btn-pass:active { background: var(--pass-color); color: #000; }
+        .btn-fail:active { background: var(--fail-color); color: #000; }
+
+        /* Touch test specific */
+        #touch-canvas-container {
+            flex: 1;
+            position: relative;
+            display: grid;
+            gap: 1px;
+            background: var(--border-color);
+            width: 100%;
+            touch-action: none; /* Prevent scrolling */
+        }
+        .touch-box {
+            background: var(--bg-color);
+        }
+        .touch-box.touched {
+            background: var(--pass-color);
+        }
+        #touch-controls {
+            padding: 15px;
+            display: flex;
+            justify-content: space-around;
+            background: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>ENG MODE<br><span style="font-size:1rem; color:#888;">DROP TEST</span></h1>
+    <ul class="menu-list">
+        <li class="menu-item" onclick="openTest('touch')">
+            <span>1. TOUCH (觸控測試)</span>
+            <span id="status-touch" class="status">--</span>
+        </li>
+        <li class="menu-item" onclick="openTest('volume')">
+            <span>2. VOLUME (音量測試)</span>
+            <span id="status-volume" class="status">--</span>
+        </li>
+        <li class="menu-item" onclick="openTest('vibration')">
+            <span>3. VIBRATION (震動測試)</span>
+            <span id="status-vibration" class="status">--</span>
+        </li>
+        <li class="menu-item" onclick="openTest('wifi')">
+            <span>4. WI-FI (連線測試)</span>
+            <span id="status-wifi" class="status">--</span>
+        </li>
+        <li class="menu-item" onclick="openTest('bluetooth')">
+            <span>5. BLUETOOTH (藍牙測試)</span>
+            <span id="status-bluetooth" class="status">--</span>
+        </li>
+    </ul>
+
+    <!-- Touch Test View -->
+    <div id="view-touch" class="test-view">
+        <div id="touch-canvas-container"></div>
+        <div id="touch-controls">
+            <button class="action-btn btn-fail" onclick="setResult('touch', 'fail')">FAIL</button>
+            <button class="action-btn btn-pass" onclick="setResult('touch', 'pass')">PASS</button>
+        </div>
+    </div>
+
+    <!-- Generic Test View -->
+    <div id="view-generic" class="test-view">
+        <div class="test-header">
+            <span id="gen-title">TEST</span>
+            <span onclick="closeTest()" style="cursor:pointer; color:#888; padding:0 10px;">[X] EXIT</span>
+        </div>
+        <div class="test-content">
+            <p id="gen-desc" style="font-size: 1.1rem; line-height: 1.5; color: #ccc; margin-bottom: 30px;">Description</p>
+            <div id="gen-action-area"></div>
+            <div class="result-btns">
+                <button class="action-btn btn-fail" onclick="setGenericResult('fail')">FAIL</button>
+                <button class="action-btn btn-pass" onclick="setGenericResult('pass')">PASS</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTest = '';
+        let audioCtx = null;
+        let oscillator = null;
+
+        function openTest(test) {
+            currentTest = test;
+            if (test === 'touch') {
+                initTouchTest();
+                document.getElementById('view-touch').style.display = 'flex';
+            } else {
+                setupGenericTest(test);
+                document.getElementById('view-generic').style.display = 'flex';
+            }
+        }
+
+        function closeTest() {
+            document.getElementById('view-touch').style.display = 'none';
+            document.getElementById('view-generic').style.display = 'none';
+            stopAudio();
+        }
+
+        function setResult(test, result) {
+            const el = document.getElementById(`status-${test}`);
+            if (result === 'pass') {
+                el.textContent = 'PASS';
+                el.className = 'status pass';
+            } else {
+                el.textContent = 'FAIL';
+                el.className = 'status fail';
+            }
+            closeTest();
+        }
+
+        function setGenericResult(result) {
+            setResult(currentTest, result);
+        }
+
+        // --- Touch Test ---
+        function initTouchTest() {
+            const container = document.getElementById('touch-canvas-container');
+            container.innerHTML = '';
+            
+            // Generate a grid. Assume roughly square boxes.
+            // Screen width divided by 7 columns gives a decent box size.
+            const cols = 7;
+            const boxSize = window.innerWidth / cols;
+            // Available height for grid = window height minus controls (approx 80px)
+            const rows = Math.floor((window.innerHeight - 80) / boxSize);
+            
+            container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            container.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+            for (let i = 0; i < cols * rows; i++) {
+                let box = document.createElement('div');
+                box.className = 'touch-box';
+                container.appendChild(box);
+            }
+
+            container.ontouchmove = handleTouch;
+            container.ontouchstart = handleTouch;
+            
+            // For desktop debugging
+            let isMouseDown = false;
+            container.onmousedown = (e) => { isMouseDown = true; handleMouse(e); };
+            container.onmouseup = () => isMouseDown = false;
+            container.onmousemove = (e) => { if(isMouseDown) handleMouse(e); };
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            for (let i = 0; i < e.touches.length; i++) {
+                let touch = e.touches[i];
+                let el = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (el && el.classList.contains('touch-box')) {
+                    el.classList.add('touched');
+                }
+            }
+        }
+        
+        function handleMouse(e) {
+            let el = document.elementFromPoint(e.clientX, e.clientY);
+            if (el && el.classList.contains('touch-box')) {
+                el.classList.add('touched');
+            }
+        }
+
+        // --- Generic Tests Setup ---
+        function setupGenericTest(test) {
+            const titleEl = document.getElementById('gen-title');
+            const descEl = document.getElementById('gen-desc');
+            const actionArea = document.getElementById('gen-action-area');
+            actionArea.innerHTML = '';
+
+            if (test === 'volume') {
+                titleEl.textContent = 'VOLUME (音量)';
+                descEl.innerHTML = '請點擊下方按鈕播放持續測試音。<br><br>接著按壓手機的「實體音量鍵」，<br>確認聲音是否有確實變大變小。';
+                const btn = document.createElement('button');
+                btn.className = 'action-btn';
+                btn.textContent = '▶ 播放測試音';
+                btn.onclick = toggleAudio;
+                actionArea.appendChild(btn);
+            } 
+            else if (test === 'vibration') {
+                titleEl.textContent = 'VIBRATION (震動)';
+                descEl.innerHTML = '點擊下方按鈕觸發手機震動馬達。<br><br><span style="color:#888; font-size:0.9rem;">(註：iOS 網頁端因系統限制不支援此 API，iPhone 將不會有反應)</span>';
+                const btn = document.createElement('button');
+                btn.className = 'action-btn';
+                btn.textContent = '啟動震動';
+                btn.onclick = () => {
+                    if (navigator.vibrate) {
+                        navigator.vibrate([500, 200, 500, 200, 500]);
+                    } else {
+                        alert("您的瀏覽器或設備不支援震動 API");
+                    }
+                };
+                actionArea.appendChild(btn);
+            }
+            else if (test === 'wifi') {
+                titleEl.textContent = 'WI-FI (連線狀態)';
+                const isOnline = navigator.onLine;
+                descEl.innerHTML = '目前的網路狀態偵測為：<br><br>' + 
+                    (isOnline 
+                        ? '<span style="color:var(--pass-color); font-size: 1.5rem; font-weight:bold;">已連線 (Online)</span>' 
+                        : '<span style="color:var(--fail-color); font-size: 1.5rem; font-weight:bold;">未連線 (Offline)</span>') +
+                    '<br><br>請確認是否符合預期。';
+            }
+            else if (test === 'bluetooth') {
+                titleEl.textContent = 'BLUETOOTH (藍牙)';
+                descEl.innerHTML = '點擊按鈕開啟系統藍牙掃描。<br>只要系統視窗有成功跳出，<br>即代表藍牙 API 與天線作動正常。<br><br><span style="color:#888; font-size:0.9rem;">(需支援 Web Bluetooth 之瀏覽器，如 Android Chrome)</span>';
+                const btn = document.createElement('button');
+                btn.className = 'action-btn';
+                btn.textContent = '掃描藍牙裝置';
+                btn.onclick = async () => {
+                    try {
+                        if (!navigator.bluetooth) {
+                            alert("此瀏覽器不支援 Web Bluetooth");
+                            return;
+                        }
+                        await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
+                    } catch (error) {
+                        console.log(error);
+                        // User cancelling the prompt is normal and means the prompt worked.
+                        if(error.name === 'NotFoundError') {
+                           alert("已取消掃描，但系統成功呼叫藍牙介面。");
+                        } else {
+                           alert("藍牙呼叫失敗: " + error.message);
+                        }
+                    }
+                };
+                actionArea.appendChild(btn);
+            }
+        }
+
+        // --- Audio Utils ---
+        function toggleAudio(e) {
+            if (oscillator) {
+                stopAudio();
+                e.target.textContent = '▶ 播放測試音';
+            } else {
+                playAudio();
+                e.target.textContent = '⏹ 停止測試音';
+            }
+        }
+
+        function playAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            oscillator = audioCtx.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 440; // 440Hz 基準音
+            oscillator.connect(audioCtx.destination);
+            oscillator.start();
+        }
+
+        function stopAudio() {
+            if (oscillator) {
+                oscillator.stop();
+                oscillator.disconnect();
+                oscillator = null;
+            }
+        }
+    </script>
+</body>
+</html>
