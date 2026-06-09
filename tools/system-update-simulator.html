@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OS 系統更新與硬體壽命模擬器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #0f172a;
+        }
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .phone-notch {
+            width: 140px;
+            height: 25px;
+            background: #1e293b;
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            margin: 0 auto;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 p-4 md:p-8 flex flex-col items-center justify-center">
+
+    <div class="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- 左側：說明與品牌故事 -->
+        <div class="lg:col-span-5 space-y-6 text-center lg:text-left mt-4 lg:mt-12">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-medium">
+                <i class="fa-solid fa-microchip"></i> 可靠度工程實驗室線上演示
+            </div>
+            <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                軟體更新的甜蜜陷阱
+            </h1>
+            <p class="text-slate-400 leading-relaxed text-sm md:text-base">
+                這是一個模擬手機「系統更新」對硬體產生環境應力的互動小工具。每次升級雖然帶來了更強大的功能與跑分，但也悄悄拉高了晶片的運作基線。親自點擊更新，看看硬體物理極限是如何在效能榨乾後迎來終局。
+            </p>
+            <div class="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 space-y-2 text-left text-xs text-slate-400">
+                <div class="flex items-center gap-2 text-slate-300 font-medium text-sm mb-1">
+                    <i class="fa-solid fa-calculator text-indigo-400"></i> 底層可靠度模型說明
+                </div>
+                <p>• <strong>電池降額機制</strong>：模擬高負載引起的熱積累（Thermal Accumulation），加速電解液高溫揮發。</p>
+                <p>• <strong>熱降頻控制 (Throttling)</strong>：當系統負載達到 100% 物理極限，強制觸發硬體保護機制，效能斷崖式下跌。</p>
+            </div>
+            
+            <!-- Ad Banner & Footer -->
+            <div class="mt-8 p-4 bg-sky-400/5 border border-sky-400/30 rounded-2xl text-center space-y-4">
+                <p class="text-sm text-slate-300 font-medium">💡 Welcome back to Reliability Engineering Hub to explore more simulators!</p>
+                <a href="../index.html" class="inline-block px-4 py-2 bg-slate-800/50 hover:bg-slate-700 border border-slate-600/50 rounded-full text-sm font-bold text-slate-200 transition-all hover:-translate-y-0.5">
+                    🏠 Back to Reliability Hub
+                </a>
+            </div>
+            
+            <div class="mt-4 text-center text-xs text-slate-500 font-mono">
+                Developed by <span class="font-bold text-sky-400">Lam | Reliability Engineer</span><br>
+                Built for #VibeCoding & #PhysicsOfFailure
+            </div>
+        </div>
+
+        <!-- 右側：手機模擬 UI -->
+        <div class="lg:col-span-7 flex justify-center">
+            <div id="phone-container" class="relative w-full max-w-[360px] h-[720px] bg-slate-950 rounded-[40px] p-3 border-[6px] border-slate-800 shadow-2xl overflow-hidden ring-1 ring-slate-700/50 flex flex-col transition-all duration-700">
+                
+                <!-- 手機瀏海與狀態列 -->
+                <div class="phone-notch"></div>
+                <div class="flex justify-between items-center px-6 pt-2 pb-4 text-xs font-medium text-slate-400 z-40">
+                    <div>12:00</div>
+                    <div class="flex items-center gap-1.5">
+                        <i class="fa-solid fa-wifi"></i>
+                        <i class="fa-solid fa-signal"></i>
+                        <i class="fa-solid fa-battery-three-quarters"></i>
+                    </div>
+                </div>
+
+                <!-- 手機內部主畫面 -->
+                <div class="flex-1 bg-slate-900 rounded-[32px] p-5 pt-6 flex flex-col justify-between overflow-y-auto no-scrollbar relative">
+                    
+                    <!-- 頂部導覽列 -->
+                    <div class="space-y-1">
+                        <div class="text-xs font-bold text-indigo-400 uppercase tracking-wider code-font">Settings > System Update</div>
+                        <h2 class="text-xl font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-gear text-slate-400"></i> 系統更新
+                        </h2>
+                    </div>
+
+                    <!-- 核心數據面板 -->
+                    <div class="my-4 space-y-4">
+                        
+                        <!-- 系統負載進度條 -->
+                        <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+                            <div class="flex justify-between items-center text-xs mb-1.5">
+                                <span class="text-slate-400"><i class="fa-solid fa-gauge-high mr-1"></i> 固件預設系統負載</span>
+                                <span id="load-text" class="font-bold text-blue-400 code-font">80%</span>
+                            </div>
+                            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                <div id="load-bar" class="bg-gradient-to-r from-blue-500 to-indigo-500 h-full transition-all duration-500" style="width: 80%"></div>
+                            </div>
+                        </div>
+
+                        <!-- 雙列數據：溫度與電池健康度 -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-center">
+                                <div class="text-[11px] text-slate-500 mb-0.5"><i id="temp-icon" class="fa-solid fa-thermometer-half text-orange-400 mr-1 transition-all"></i> 核心運作溫度</div>
+                                <div id="temp-text" class="text-xl font-bold text-orange-400 code-font">38°C</div>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-center">
+                                <div class="text-[11px] text-slate-500 mb-0.5"><i id="battery-icon" class="fa-solid fa-heart-pulse text-emerald-400 mr-1 transition-all"></i> 電池最高容量</div>
+                                <div id="battery-text" class="text-xl font-bold text-emerald-400 code-font">100%</div>
+                            </div>
+                        </div>
+
+                        <!-- 效能跑分儀表板 -->
+                        <div class="bg-gradient-to-b from-slate-950 to-slate-900 p-4 rounded-2xl border border-slate-800/80 text-center relative overflow-hidden">
+                            <div class="text-xs text-slate-500 mb-1">AnTuTu 效能基準跑分</div>
+                            <div id="score-text" class="text-3xl font-black text-white tracking-wider code-font transition-all duration-300">100,000</div>
+                            <div class="text-[10px] text-slate-400 mt-1">
+                                目前系統版本: <span id="version-text" class="code-font text-indigo-400">v14.0.0</span>
+                            </div>
+                        </div>
+
+                        <!-- 解鎖功能與狀態徽章 -->
+                        <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-2">
+                            <div class="text-xs text-slate-500"><i class="fa-solid fa-wand-magic-sparkles mr-1 text-purple-400"></i> 已解鎖新軟體功能</div>
+                            <div id="badge-container" class="flex flex-wrap gap-1.5">
+                                <span class="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">基礎核心功能</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- 操作與按鈕區域 -->
+                    <div id="action-area" class="space-y-3">
+                        <div id="update-info" class="text-xs text-slate-400 bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-center">
+                            發現新版本 <span id="next-version" class="text-indigo-400 font-bold code-font">v15.0.0</span> 可用。更新優化新一代系統動畫與背景預載算法。
+                        </div>
+                        <button id="update-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-download"></i> 下載並安裝系統更新
+                        </button>
+                    </div>
+
+                    <!-- 死亡終局 Modal (預設隱藏) -->
+                    <div id="death-screen" class="absolute inset-0 bg-slate-950/95 z-50 p-6 flex flex-col items-center justify-center text-center space-y-6 hidden transition-all duration-500 opacity-0 backdrop-blur-sm">
+                        <div class="w-16 h-16 bg-red-500/20 border-2 border-red-500/50 text-red-500 rounded-full flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(239,68,68,0.4)] animate-pulse">
+                            <i class="fa-solid fa-triangle-exclamation animate-bounce"></i>
+                        </div>
+                        <div class="space-y-2">
+                            <h3 class="text-lg font-bold text-red-500">系統無法再次支援更新</h3>
+                            <p class="text-xs text-slate-400 leading-relaxed">
+                                晶片負載已達 100% 物理極限。硬體觸發全面性安全降頻保護，電池健康度嚴重衰減，裝置已失去流暢使用價值。
+                            </p>
+                        </div>
+                        <div class="w-full p-4 bg-slate-900 rounded-xl border border-slate-800 text-left">
+                            <p class="text-xs text-slate-500 tracking-wider font-bold uppercase mb-1 code-font">Reliability Engineering Conclusion:</p>
+                            <p class="text-sm text-indigo-300 font-medium leading-relaxed italic">
+                                「軟體的無限可能，最終還是要硬體的物理極限來買單。」
+                            </p>
+                        </div>
+                        <button onclick="window.location.reload()" class="text-xs text-slate-400 underline hover:text-slate-200">
+                            <i class="fa-solid fa-rotate-left mr-1"></i> 重置模擬實驗
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 模擬數據階段 (重構為結構化徽章)
+        const stages = [
+            { ver: '14.0.0', load: 80, temp: 38, battery: 100, score: 100000, badges: [{text: '基礎核心功能', type: 'normal'}], desc: '更新優化新一代系統動畫與背景預載算法。' },
+            { ver: '15.0.0', load: 85, temp: 42, battery: 92,  score: 115000, badges: [{text: '基礎核心功能', type: 'normal'}, {text: '✨ 智慧相簿修圖', type: 'feature'}], desc: '升級全新語音助手架構，提供即時背景語音語意建模。' },
+            { ver: '16.0.0', load: 90, temp: 47, battery: 84,  score: 130000, badges: [{text: '基礎核心功能', type: 'normal'}, {text: '✨ 智慧相簿修圖', type: 'feature'}, {text: '🌐 全系統即時翻譯', type: 'feature'}], desc: '加入次世代 AI 桌面渲染組件，解鎖微型本地語言模型預載。' },
+            { ver: '17.0.0', load: 95, temp: 53, battery: 75,  score: 145000, badges: [{text: '基礎核心功能', type: 'normal'}, {text: '✨ 智慧相簿修圖', type: 'feature'}, {text: '🌐 全系統即時翻譯', type: 'feature'}, {text: '🧠 個人本地 LLM', type: 'feature'}], desc: '解鎖終極狂暴效能模式。警告：此版本對硬體散熱要求較高。' },
+            { ver: '18.0.0', load: 100, temp: 62, battery: 65, score: 25000,  badges: [{text: '基礎核心功能', type: 'normal'}, {text: '✨ 智慧相簿修圖', type: 'feature'}, {text: '🌐 全系統即時翻譯', type: 'feature'}, {text: '🧠 個人本地 LLM', type: 'feature'}, {text: '⚠️ 嚴重熱降頻卡頓', type: 'warning'}], desc: '' }
+        ];
+
+        let currentStage = 0;
+
+        const phoneContainer = document.getElementById('phone-container');
+        const tempIcon = document.getElementById('temp-icon');
+        const batteryIcon = document.getElementById('battery-icon');
+        
+        const loadText = document.getElementById('load-text');
+        const loadBar = document.getElementById('load-bar');
+        const tempText = document.getElementById('temp-text');
+        const batteryText = document.getElementById('battery-text');
+        const scoreText = document.getElementById('score-text');
+        const versionText = document.getElementById('version-text');
+        const nextVersion = document.getElementById('next-version');
+        const updateInfo = document.getElementById('update-info');
+        const updateBtn = document.getElementById('update-btn');
+        const badgeContainer = document.getElementById('badge-container');
+        const deathScreen = document.getElementById('death-screen');
+        const actionArea = document.getElementById('action-area');
+
+        updateBtn.addEventListener('click', () => {
+            if (currentStage >= stages.length - 1) return;
+
+            // 按鈕加載動畫特效
+            updateBtn.disabled = true;
+            updateBtn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i> 正在寫入固件區塊...`;
+
+            setTimeout(() => {
+                currentStage++;
+                const data = stages[currentStage];
+
+                // 更新界面數據
+                loadText.textContent = data.load + '%';
+                loadBar.style.width = data.load + '%';
+                tempText.textContent = data.temp + '°C';
+                batteryText.textContent = data.battery + '%';
+                versionText.textContent = 'v' + data.ver;
+                
+                // 跑分滾動特效動畫
+                animateScore(parseInt(scoreText.textContent), data.score);
+
+                // 更新徽章
+                badgeContainer.innerHTML = '';
+                data.badges.forEach(b => {
+                    const span = document.createElement('span');
+                    let baseClass = "text-[10px] px-2 py-0.5 rounded-md text-xs font-medium ";
+                    if (b.type === 'warning') {
+                        span.className = baseClass + "bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse";
+                    } else if (b.type === 'feature') {
+                        span.className = baseClass + "bg-indigo-500/10 text-indigo-300 border border-indigo-500/20";
+                    } else {
+                        span.className = baseClass + "bg-slate-800 text-slate-300 border border-slate-700";
+                    }
+                    span.textContent = b.text;
+                    badgeContainer.appendChild(span);
+                });
+
+                // 顏色狀態轉換控制與特效
+                if (data.load >= 95) {
+                    loadText.className = "font-bold text-red-400 code-font";
+                    loadBar.className = "bg-gradient-to-r from-orange-500 to-red-500 h-full transition-all duration-500";
+                    phoneContainer.className = "relative w-full max-w-[360px] h-[720px] bg-slate-950 rounded-[40px] p-3 border-[6px] border-red-900/60 shadow-[0_0_50px_rgba(239,68,68,0.3)] overflow-hidden ring-1 ring-red-500/40 flex flex-col transition-all duration-700";
+                    tempIcon.classList.add("animate-pulse", "text-red-500");
+                } else if (data.load >= 90) {
+                    loadText.className = "font-bold text-orange-400 code-font";
+                    loadBar.className = "bg-gradient-to-r from-yellow-500 to-orange-500 h-full transition-all duration-500";
+                    phoneContainer.className = "relative w-full max-w-[360px] h-[720px] bg-slate-950 rounded-[40px] p-3 border-[6px] border-orange-900/60 shadow-[0_0_40px_rgba(249,115,22,0.2)] overflow-hidden ring-1 ring-orange-500/40 flex flex-col transition-all duration-700";
+                    tempIcon.classList.remove("text-red-500");
+                } else {
+                    loadText.className = "font-bold text-blue-400 code-font";
+                }
+                
+                // 電池健康度動畫警告
+                if (data.battery <= 80) {
+                    batteryIcon.classList.add("animate-pulse", "text-red-400");
+                    batteryIcon.classList.remove("text-emerald-400");
+                }
+
+                // 判斷是否抵達終局
+                if (currentStage === stages.length - 1) {
+                    actionArea.style.display = 'none';
+                    setTimeout(() => {
+                        deathScreen.classList.remove('hidden');
+                        setTimeout(() => {
+                            deathScreen.classList.add('opacity-100');
+                        }, 50);
+                    }, 1500);
+                } else {
+                    // 下一個版本的資訊準備
+                    const nextData = stages[currentStage + 1];
+                    nextVersion.textContent = 'v' + nextData.ver;
+                    updateInfo.innerHTML = `發現新版本 <span class="text-indigo-400 font-bold code-font">v${nextData.ver}</span> 可用。${nextData.desc}`;
+                    
+                    updateBtn.disabled = false;
+                    updateBtn.innerHTML = `<i class="fa-solid fa-download"></i> 下載並安裝系統更新`;
+                }
+
+            }, 1200);
+        });
+
+        function animateScore(start, end) {
+            let current = start;
+            const step = (end - start) / 20;
+            let count = 0;
+            const timer = setInterval(() => {
+                count++;
+                current += step;
+                scoreText.textContent = Math.round(current).toLocaleString();
+                if (count >= 20) {
+                    clearInterval(timer);
+                    scoreText.textContent = end.toLocaleString();
+                    if (end < start) {
+                        scoreText.className = "text-3xl font-black text-red-500 tracking-wider code-font animate-bounce";
+                    }
+                }
+            }, 20);
+        }
+    </script>
+</body>
+</html>

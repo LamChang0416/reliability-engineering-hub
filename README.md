@@ -70,6 +70,12 @@ An interactive tool to perform post-drop test functional verification of a smart
 - **Connectivity Check**: Verify Wi-Fi network status and Bluetooth API availability.
 - **Engineering Interface**: Minimalist UI for quick Pass/Fail testing.
 
+#### 10. System Update Simulator
+An interactive tool simulating the environmental stress of OS updates on hardware components.
+- **Thermal Throttling**: Observe how performance drastically drops when hardware reaches its physical thermal limit.
+- **Battery Degradation**: Visualize the acceleration of battery electrolyte evaporation due to high-load thermal accumulation.
+- **Dynamic Visuals**: Phone interface reacts dynamically to system load with warning glows and micro-animations.
+
 ### 📂 Project Structure
 - `index.html`: The central hub and entry point.
 - `tools/`: Individual engineering tools categorized by function.
@@ -82,6 +88,7 @@ An interactive tool to perform post-drop test functional verification of a smart
   - `bathtub-curve-simulator.html`: Bathtub curve actuarial simulator for HALT testing and BOM cost.
   - `astm-d4169-simulator.html`: ASTM D4169-23 shipping test sequence generator and simulator.
   - `drop-test.html`: Smartphone drop test functional verification tool.
+  - `system-update-simulator.html`: OS update and hardware life simulator.
 - `assets/`: Shared styles and branding elements.
 
 ### 📖 How to Use
@@ -160,6 +167,12 @@ AI 伺服器水冷 CDU 液冷架構專用的微氣候與冷凝風險計算器。
 - **連線檢查**：快速讀取 Wi-Fi 連線狀態與底層藍牙掃描 API。
 - **工程介面**：極簡無干擾的 UI，快速判定 Pass/Fail。
 
+#### 10. 軟體更新與硬體壽命模擬器 (System Update Simulator)
+模擬手機「系統更新」對硬體產生環境應力與壽命耗損的互動小工具。
+- **熱降頻控制 (Throttling)**：當系統負載達到物理極限，展示強制降頻導致的效能斷崖式下跌。
+- **電池降額機制**：模擬高負載引起的熱積累，加速電池健康度的不可逆衰減。
+- **動態視覺回饋**：手機外框與圖示會隨著負載與溫度提高，產生動態光暈與閃爍警示。
+
 ### 📂 專案目錄結構
 - `index.html`: 首頁與主要入口儀表板。
 - `tools/`: 各項工程工具。
@@ -172,6 +185,7 @@ AI 伺服器水冷 CDU 液冷架構專用的微氣候與冷凝風險計算器。
   - `bathtub-curve-simulator.html`: 浴缸曲線與 BOM 成本精算模擬器。
   - `astm-d4169-simulator.html`: ASTM D4169-23 運輸測試計畫模擬器。
   - `drop-test.html`: 手機落下測試硬體驗證工具。
+  - `system-update-simulator.html`: OS 更新與硬體壽命模擬器。
 - `assets/`: 共用樣式與品牌視覺資源。
 
 ### 📖 如何使用
