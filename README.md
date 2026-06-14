@@ -76,6 +76,12 @@ An interactive tool simulating the environmental stress of OS updates on hardwar
 - **Battery Degradation**: Visualize the acceleration of battery electrolyte evaporation due to high-load thermal accumulation.
 - **Dynamic Visuals**: Phone interface reacts dynamically to system load with warning glows and micro-animations.
 
+#### 11. IP68 Thermal Simulator
+An interactive tool demonstrating the physics of failure when high temperatures degrade IP68 water resistance seals.
+- **Physics-of-Failure**: Visualizes how thermal expansion and seal degradation lead to moisture ingress.
+- **Component Damage**: Simulates real-time short circuits on the CPU and severe battery swelling.
+- **Interactive UI**: Dynamic visual effects including short-circuit sparks, glitching, and battery temperature monitoring.
+
 ### 📂 Project Structure
 - `index.html`: The central hub and entry point.
 - `tools/`: Individual engineering tools categorized by function.
@@ -89,6 +95,7 @@ An interactive tool simulating the environmental stress of OS updates on hardwar
   - `astm-d4169-simulator.html`: ASTM D4169-23 shipping test sequence generator and simulator.
   - `drop-test.html`: Smartphone drop test functional verification tool.
   - `system-update-simulator.html`: OS update and hardware life simulator.
+  - `ip68-simulator.html`: IP68 thermal degradation and water ingress simulator.
 - `assets/`: Shared styles and branding elements.
 
 ### 📖 How to Use
@@ -173,6 +180,12 @@ AI 伺服器水冷 CDU 液冷架構專用的微氣候與冷凝風險計算器。
 - **電池降額機制**：模擬高負載引起的熱積累，加速電池健康度的不可逆衰減。
 - **動態視覺回饋**：手機外框與圖示會隨著負載與溫度提高，產生動態光暈與閃爍警示。
 
+#### 11. IP68 溫度崩潰模擬器 (IP68 Thermal Simulator)
+模擬高溫環境如何破壞 IP68 防水膠條，導致水蒸氣入侵的互動工具。
+- **失效物理展示**：視覺化展示熱脹冷縮如何撐開防水膠條。
+- **零件損壞模擬**：真實模擬水滴滴入主機板造成的 CPU 短路火花與電池極限膨脹。
+- **互動式拉桿**：拖曳水溫拉桿，觀察不同溫度對手機防護力的不可逆破壞。
+
 ### 📂 專案目錄結構
 - `index.html`: 首頁與主要入口儀表板。
 - `tools/`: 各項工程工具。
@@ -186,6 +199,7 @@ AI 伺服器水冷 CDU 液冷架構專用的微氣候與冷凝風險計算器。
   - `astm-d4169-simulator.html`: ASTM D4169-23 運輸測試計畫模擬器。
   - `drop-test.html`: 手機落下測試硬體驗證工具。
   - `system-update-simulator.html`: OS 更新與硬體壽命模擬器。
+  - `ip68-simulator.html`: IP68 防水膠條熱衰退與水氣入侵模擬器。
 - `assets/`: 共用樣式與品牌視覺資源。
 
 ### 📖 如何使用

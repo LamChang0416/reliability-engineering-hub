@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP68 溫度崩潰模擬器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #020617; /* Slate 950 */
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        /* 手機物理膨脹動畫 */
+        .bulge-soft {
+            transform: scaleX(1.03) scaleY(1.01);
+            border-radius: 3.2rem !important;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .bulge-extreme {
+            transform: scaleX(1.06) scaleY(1.02);
+            border-radius: 3.5rem !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* CPU 動態效果 */
+        @keyframes cpu-pulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(16,185,129,0.15); }
+            50% { box-shadow: 0 0 25px rgba(16,185,129,0.4); }
+        }
+        .cpu-normal { animation: cpu-pulse 2s infinite; }
+        
+        @keyframes spark {
+            0% { background-color: transparent; }
+            50% { background-color: #fbbf24; box-shadow: 0 0 20px #f59e0b; }
+            100% { background-color: transparent; }
+        }
+        .spark-active { animation: spark 0.1s 3; }
+
+        /* 電池膨脹 */
+        .battery-swell-soft {
+            transform: scale3d(1.05, 1.05, 1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5), inset 0 0 20px rgba(249,115,22,0.2) !important;
+            border-color: #f97316 !important;
+        }
+        .battery-swell-extreme {
+            transform: scale3d(1.12, 1.1, 1);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8), inset 0 0 40px rgba(239,68,68,0.4) !important;
+            border-color: #ef4444 !important;
+            border-radius: 2rem !important;
+        }
+
+        /* 畫面故障干擾 (Glitch) */
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+        .glitch-active {
+            animation: glitch 0.2s infinite;
+            filter: hue-rotate(90deg) contrast(150%);
+        }
+
+        /* 溫度拉桿客製化 */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 28px;
+            width: 28px;
+            border-radius: 50%;
+            background: #f8fafc;
+            cursor: pointer;
+            margin-top: -10px;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: linear-gradient(to right, #3b82f6, #f97316, #ef4444);
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex flex-col md:flex-row text-slate-100 relative">
+
+    <canvas id="outer-canvas" class="absolute inset-0 z-0 pointer-events-none"></canvas>
+
+    <div class="z-10 w-full md:w-1/3 md:min-w-[380px] p-6 bg-slate-900/80 backdrop-blur-md border-r border-slate-800 flex flex-col justify-between h-auto md:h-full shadow-2xl">
+        <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold mb-4">
+                <i class="fa-solid fa-fire-flame-curved"></i> 破壞性物理實驗
+            </div>
+            <h1 class="text-3xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-400">
+                IP68 溫度崩潰模擬
+            </h1>
+            <p class="text-sm text-slate-400 leading-relaxed mb-8">
+                拉動水溫拉桿，觀察高溫是如何撐開防水膠條，讓無孔不入的水蒸氣鑽入主機板。注意：<span class="text-orange-400 font-bold">物理變形的破壞是不可逆的。</span>
+            </p>
+
+            <div id="status-panel" class="p-4 rounded-xl border-2 border-blue-500/50 bg-blue-900/20 transition-colors duration-500 mb-8">
+                <div class="text-xs text-slate-400 font-bold tracking-wider mb-1 uppercase">Current Status</div>
+                <div id="status-text" class="text-lg font-bold text-blue-400">
+                    <i class="fa-solid fa-check-circle mr-2"></i>防護完整 (常溫)
+                </div>
+                <div id="status-desc" class="text-xs text-slate-300 mt-2">
+                    符合 IEC 60529 規範測試水溫。密封膠條堅固，水分子被阻擋在外。
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex justify-between items-end">
+                    <label class="font-bold text-slate-300"><i class="fa-solid fa-temperature-half text-slate-400 mr-2"></i>環境水溫控制</label>
+                    <span id="temp-display" class="text-3xl font-black text-blue-400 font-mono">25°C</span>
+                </div>
+                <input type="range" id="temp-slider" min="15" max="60" value="25" step="1">
+                <div class="flex justify-between text-xs font-bold text-slate-500">
+                    <span>15°C (實驗室)</span>
+                    <span>40°C (溫水浴室)</span>
+                    <span class="text-red-900">60°C (極限破壞)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-8 pt-4 border-t border-slate-800 text-xs text-slate-500 flex items-center justify-between">
+            <span>Developed by Lam | Reliability Engineer</span>
+            <i class="fa-brands fa-linkedin text-lg"></i>
+        </div>
+    </div>
+
+    <div class="z-10 flex-1 flex items-center justify-center p-8 relative">
+        
+        <div id="phone" class="relative w-[280px] h-[580px] rounded-[3rem] transition-all duration-500 flex items-center justify-center">
+            
+            <div id="seal" class="absolute inset-0 border-[8px] border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.3)] rounded-[3rem] transition-all duration-500 z-20"></div>
+            
+            <div id="crack" class="absolute top-[-4px] left-1/2 -translate-x-1/2 w-16 h-[16px] bg-slate-950 opacity-0 transition-opacity duration-300 z-30 flex items-center justify-center">
+                <div class="w-full h-[2px] bg-red-500 shadow-[0_0_10px_red]"></div>
+            </div>
+
+            <div id="inner-cavity" class="absolute inset-[12px] bg-slate-900 rounded-[2.4rem] overflow-hidden flex flex-col items-center justify-center z-10 border border-slate-800">
+                
+                <!-- 背景電路板裝飾 -->
+                <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, #334155 25%, transparent 25%, transparent 75%, #334155 75%, #334155), repeating-linear-gradient(45deg, #334155 25%, #0f172a 25%, #0f172a 75%, #334155 75%, #334155); background-position: 0 0, 10px 10px; background-size: 20px 20px;"></div>
+
+                <!-- CPU 區塊 -->
+                <div id="cpu-container" class="relative mb-10 mt-6 z-10">
+                    <div id="cpu" class="w-24 h-24 bg-gradient-to-br from-slate-800 to-slate-950 border border-slate-600 rounded-lg relative flex flex-col items-center justify-center cpu-normal transition-all duration-300">
+                        <div class="absolute inset-1 border border-slate-700/50 rounded pointer-events-none"></div>
+                        <i id="cpu-icon" class="fa-solid fa-microchip text-4xl text-emerald-500/70 mb-1 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)] transition-colors"></i>
+                        <div class="text-[9px] text-slate-300 font-mono tracking-widest mt-1">A-SERIES CORE</div>
+                        <div class="text-[7px] text-slate-500 font-mono mt-0.5">NPU ACTIVE</div>
+                        
+                        <!-- 裝飾接腳 (Top & Bottom) -->
+                        <div class="absolute -top-1 left-2 right-2 flex justify-between px-1"><div class="w-1 h-1.5 bg-yellow-600/50"></div><div class="w-1 h-1.5 bg-yellow-600/50"></div><div class="w-1 h-1.5 bg-yellow-600/50"></div><div class="w-1 h-1.5 bg-yellow-600/50"></div><div class="w-1 h-1.5 bg-yellow-600/50"></div></div>
+                        <div class="absolute -bottom-1 left-2 right-2 flex justify-between px-1"><div class="w-1 h-1.5 bg-yellow-600/50"></div><div class="w-1 h-1.5 bg-yellow-600/50"></div><div class="w-1 h-1.5 bg-yellow-600/50"></div><div class="w-1 h-1.5 bg-yellow-600/50"></div><div class="w-1 h-1.5 bg-yellow-600/50"></div></div>
+                        <!-- 裝飾接腳 (Left & Right) -->
+                        <div class="absolute top-2 bottom-2 -left-1 flex flex-col justify-between py-1"><div class="h-1 w-1.5 bg-yellow-600/50"></div><div class="h-1 w-1.5 bg-yellow-600/50"></div><div class="h-1 w-1.5 bg-yellow-600/50"></div><div class="h-1 w-1.5 bg-yellow-600/50"></div><div class="h-1 w-1.5 bg-yellow-600/50"></div></div>
+                        <div class="absolute top-2 bottom-2 -right-1 flex flex-col justify-between py-1"><div class="h-1 w-1.5 bg-yellow-600/50"></div><div class="h-1 w-1.5 bg-yellow-600/50"></div><div class="h-1 w-1.5 bg-yellow-600/50"></div><div class="h-1 w-1.5 bg-yellow-600/50"></div><div class="h-1 w-1.5 bg-yellow-600/50"></div></div>
+                    </div>
+                </div>
+
+                <!-- 電池區塊 -->
+                <div id="battery-container" class="relative w-36 h-48 z-10 flex flex-col items-center">
+                    <!-- 頂部接頭與排線 -->
+                    <div class="w-8 h-2 bg-slate-700 border border-slate-600 rounded-t-sm z-0 relative">
+                        <div class="absolute -top-10 left-1/2 -translate-x-1/2 w-4 h-10 border-l-2 border-t-2 border-orange-500/50 rounded-tl-lg z-0"></div>
+                    </div>
+                    
+                    <!-- 電池本體 -->
+                    <div id="battery" class="w-full h-full bg-gradient-to-b from-slate-800 to-slate-900 border-2 border-slate-700 rounded-xl flex flex-col items-center justify-between p-3 shadow-inner transition-all duration-500 overflow-hidden relative">
+                        <div class="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
+                        
+                        <div class="w-full flex justify-between items-center border-b border-slate-700/50 pb-2 z-10">
+                            <i id="battery-icon" class="fa-solid fa-bolt text-emerald-500 text-sm transition-colors duration-300"></i>
+                            <span class="text-[10px] text-slate-400 font-mono font-bold">4500 mAh</span>
+                        </div>
+                        
+                        <div class="flex-1 flex items-center justify-center w-full z-10">
+                            <div class="text-center">
+                                <div class="text-[11px] text-slate-300 font-bold tracking-widest uppercase">Li-ion Polymer</div>
+                                <div class="text-[8px] text-red-400/80 mt-1 uppercase font-bold">Do not puncture</div>
+                                <div id="battery-status-text" class="text-[9px] text-emerald-400 mt-3 font-mono">Temp: NORMAL</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 溫度指示條 -->
+                        <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden mt-2 z-10">
+                            <div id="battery-temp-bar" class="h-full w-1/3 bg-emerald-500 transition-all duration-300"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <canvas id="inner-canvas" class="absolute inset-0 pointer-events-none z-20"></canvas>
+                
+                <div id="flash" class="absolute inset-0 bg-white opacity-0 pointer-events-none z-30 transition-opacity duration-75"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="death-modal" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-700 px-4">
+        <div class="max-w-md bg-slate-900 border border-red-500/50 p-8 rounded-2xl shadow-[0_0_50px_rgba(239,68,68,0.3)] text-center transform scale-95 transition-transform duration-700" id="death-card">
+            <div class="w-20 h-20 bg-red-500/10 border border-red-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fa-solid fa-triangle-exclamation text-4xl text-red-500"></i>
+            </div>
+            <h2 class="text-2xl font-black text-white mb-2">主機板短路燒毀</h2>
+            <p class="text-red-400 text-sm font-bold mb-6">保固判定：人為受潮，失去保固效力。</p>
+            
+            <div class="bg-slate-950 p-5 rounded-xl text-left border border-slate-800 mb-8">
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2 font-mono">Engineering Conclusion:</p>
+                <p class="text-sm text-slate-300 leading-relaxed italic border-l-2 border-indigo-500 pl-3">
+                    「防水標籤只保證出廠那一刻的實驗室數據，保不住你浴室裡的熱力學。」
+                </p>
+            </div>
+            
+            <button onclick="window.location.reload()" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-colors shadow-lg shadow-red-600/20">
+                重新進行破壞實驗
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 核心變數
+        const tempSlider = document.getElementById('temp-slider');
+        const tempDisplay = document.getElementById('temp-display');
+        const phone = document.getElementById('phone');
+        const seal = document.getElementById('seal');
+        const crack = document.getElementById('crack');
+        const statusPanel = document.getElementById('status-panel');
+        const statusText = document.getElementById('status-text');
+        const statusDesc = document.getElementById('status-desc');
+        const flash = document.getElementById('flash');
+        const cpu = document.getElementById('cpu');
+        const cpuIcon = document.getElementById('cpu-icon');
+        const battery = document.getElementById('battery');
+        const batteryTempBar = document.getElementById('battery-temp-bar');
+        const batteryIcon = document.getElementById('battery-icon');
+        const batteryStatusText = document.getElementById('battery-status-text');
+        const innerCavity = document.getElementById('inner-cavity');
+        
+        let currentTemp = 25;
+        let maxTempReached = 25; // 紀錄歷史最高溫 (不可逆物理)
+        let isBroken = false;
+        let motherboardHealth = 100;
+        let isDead = false;
+
+        // 監聽拉桿
+        tempSlider.addEventListener('input', (e) => {
+            currentTemp = parseInt(e.target.value);
+            
+            // 溫度顯示顏色邏輯
+            if (currentTemp < 35) tempDisplay.className = "text-3xl font-black font-mono text-blue-400";
+            else if (currentTemp < 45) tempDisplay.className = "text-3xl font-black font-mono text-orange-400";
+            else tempDisplay.className = "text-3xl font-black font-mono text-red-500 animate-pulse";
+            
+            tempDisplay.textContent = currentTemp + '°C';
+
+            // 記錄不可逆最高溫
+            if (currentTemp > maxTempReached) {
+                maxTempReached = currentTemp;
+            }
+
+            updatePhysicsState();
+        });
+
+        // 更新物理狀態 (基於 maxTempReached，實現不可逆)
+        function updatePhysicsState() {
+            if (isDead) return;
+
+            // 更新電池UI
+            let tempRatio = Math.min((currentTemp - 15) / 45, 1);
+            batteryTempBar.style.width = `${Math.max(33, tempRatio * 100)}%`;
+            
+            if (currentTemp < 35) {
+                batteryTempBar.className = "h-full bg-emerald-500 transition-all duration-300";
+                batteryIcon.className = "fa-solid fa-bolt text-emerald-500 text-sm transition-colors duration-300";
+                batteryStatusText.textContent = "Temp: NORMAL";
+                batteryStatusText.className = "text-[9px] text-emerald-400 mt-3 font-mono";
+            } else if (currentTemp < 45) {
+                batteryTempBar.className = "h-full bg-orange-500 transition-all duration-300";
+                batteryIcon.className = "fa-solid fa-fire text-orange-500 text-sm transition-colors duration-300";
+                batteryStatusText.textContent = "Temp: WARNING";
+                batteryStatusText.className = "text-[9px] text-orange-400 mt-3 font-mono animate-pulse";
+            } else {
+                batteryTempBar.className = "h-full bg-red-600 transition-all duration-300";
+                batteryIcon.className = "fa-solid fa-radiation text-red-500 text-sm transition-colors duration-300 animate-pulse";
+                batteryStatusText.textContent = "Temp: CRITICAL";
+                batteryStatusText.className = "text-[9px] text-red-500 mt-3 font-mono animate-pulse font-black";
+            }
+
+            // 階段三：破壞 (>45度)
+            if (maxTempReached >= 45) {
+                if (!isBroken) {
+                    isBroken = true;
+                    crack.style.opacity = '1';
+                    seal.className = "absolute inset-0 border-[8px] border-red-600 rounded-[3.5rem] transition-all duration-500 z-20 shadow-[0_0_30px_rgba(220,38,38,0.5)]";
+                    phone.className = "relative w-[280px] h-[580px] rounded-[3.5rem] flex items-center justify-center bulge-extreme";
+                    battery.classList.add('battery-swell-extreme');
+                    battery.classList.remove('battery-swell-soft');
+                    
+                    statusPanel.className = "p-4 rounded-xl border-2 border-red-500/50 bg-red-900/30 transition-colors duration-500 mb-8 animate-pulse";
+                    statusText.innerHTML = '<i class="fa-solid fa-skull-crossbones mr-2 text-red-500"></i>防線崩潰 (不可逆)';
+                    statusDesc.textContent = "膠條已被高溫撐破產生裂縫。就算溫度下降，裂縫也不會癒合，水蒸氣正瘋狂湧入！電池已達危險膨脹臨界點。";
+                }
+            } 
+            // 階段二：軟化膨脹 (36-44度)
+            else if (maxTempReached >= 36) {
+                seal.className = "absolute inset-0 border-[8px] border-orange-500 rounded-[3.2rem] transition-all duration-500 z-20";
+                phone.className = "relative w-[280px] h-[580px] rounded-[3.2rem] flex items-center justify-center bulge-soft";
+                if(!isBroken) {
+                    battery.classList.add('battery-swell-soft');
+                }
+                
+                statusPanel.className = "p-4 rounded-xl border-2 border-orange-500/50 bg-orange-900/20 transition-colors duration-500 mb-8";
+                statusText.innerHTML = '<i class="fa-solid fa-compress mr-2 text-orange-400"></i>熱脹冷縮啟動';
+                statusDesc.textContent = "內部空氣膨脹正往外推擠，防水膠條受熱軟化，防護力急遽下降中。電池開始因為高溫出現微幅膨脹。";
+            }
+        }
+
+        // --- 駭客級 Canvas 粒子引擎 ---
+        const outCanvas = document.getElementById('outer-canvas');
+        const inCanvas = document.getElementById('inner-canvas');
+        const ctxOut = outCanvas.getContext('2d');
+        const ctxIn = inCanvas.getContext('2d');
+
+        function resizeCanvas() {
+            outCanvas.width = window.innerWidth;
+            outCanvas.height = window.innerHeight;
+            inCanvas.width = innerCavity.clientWidth;
+            inCanvas.height = innerCavity.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let outerParticles = [];
+        let innerParticles = [];
+
+        // 外部蒸氣粒子 (漂浮)
+        class Vapor {
+            constructor() {
+                this.x = Math.random() * outCanvas.width;
+                this.y = outCanvas.height + Math.random() * 100;
+                this.size = Math.random() * 2 + 1;
+                this.speedY = Math.random() * -1 - 0.5;
+                this.speedX = (Math.random() - 0.5) * 1;
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+            update(temp) {
+                // 溫度越高，蒸氣越活躍
+                let speedMult = temp >= 36 ? (temp / 15) : 1;
+                this.y += this.speedY * speedMult;
+                this.x += this.speedX;
+                if (this.y < -10) {
+                    this.y = outCanvas.height + 10;
+                    this.x = Math.random() * outCanvas.width;
+                }
+            }
+            draw() {
+                ctxOut.fillStyle = `rgba(255, 255, 255, ${currentTemp >= 36 ? this.opacity * 1.5 : this.opacity * 0.5})`;
+                ctxOut.beginPath();
+                ctxOut.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctxOut.fill();
+            }
+        }
+
+        // 內部入侵水滴 (具攻擊性)
+        class Intruder {
+            constructor() {
+                this.x = inCanvas.width / 2 + (Math.random() - 0.5) * 30; // 從裂縫(頂部中間)進入
+                this.y = 0;
+                // 目標鎖定 CPU
+                this.targetX = inCanvas.width / 2 + (Math.random() - 0.5) * 40;
+                this.targetY = 80 + Math.random() * 40; // CPU 大約位置
+                this.speed = Math.random() * 3 + 2;
+            }
+            update() {
+                let dx = this.targetX - this.x;
+                let dy = this.targetY - this.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist > 5) {
+                    this.x += (dx/dist) * this.speed;
+                    this.y += (dy/dist) * this.speed;
+                    return true;
+                }
+                return false; // 擊中
+            }
+            draw() {
+                ctxIn.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctxIn.beginPath();
+                ctxIn.arc(this.x, this.y, 1.5, 0, Math.PI * 2);
+                ctxIn.fill();
+            }
+        }
+
+        // 初始化外部粒子
+        for(let i=0; i<150; i++) outerParticles.push(new Vapor());
+
+        // 主動畫迴圈
+        function animate() {
+            ctxOut.clearRect(0, 0, outCanvas.width, outCanvas.height);
+            ctxIn.clearRect(0, 0, inCanvas.width, inCanvas.height);
+
+            // 更新外部
+            outerParticles.forEach(p => {
+                p.update(currentTemp);
+                p.draw();
+            });
+
+            // 如果破壞了，開始生成內部粒子
+            if (isBroken && !isDead) {
+                // 每幀有機率產生入侵水滴
+                if (Math.random() < 0.2) {
+                    innerParticles.push(new Intruder());
+                }
+
+                for (let i = innerParticles.length - 1; i >= 0; i--) {
+                    let p = innerParticles[i];
+                    if (p.update()) {
+                        p.draw();
+                    } else {
+                        // 擊中 CPU
+                        innerParticles.splice(i, 1);
+                        triggerDamage();
+                    }
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function triggerDamage() {
+            if(isDead) return;
+            
+            // 閃光特效與短路火花
+            flash.style.opacity = '0.8';
+            cpu.classList.add('spark-active');
+            setTimeout(() => { 
+                flash.style.opacity = '0'; 
+                cpu.classList.remove('spark-active');
+            }, 100);
+            
+            // 扣血
+            motherboardHealth -= 2;
+            
+            // 變色警告
+            if(motherboardHealth < 75 && motherboardHealth >= 50) {
+                cpu.classList.remove('cpu-normal');
+                cpu.className = "w-24 h-24 bg-gradient-to-br from-orange-900 to-slate-900 border border-orange-500 rounded-lg relative flex flex-col items-center justify-center z-10 shadow-[0_0_20px_rgba(249,115,22,0.3)] transition-all duration-300";
+                cpuIcon.className = "fa-solid fa-microchip text-4xl text-orange-500/80 mb-1 drop-shadow-[0_0_8px_rgba(249,115,22,0.8)] animate-pulse";
+            } else if(motherboardHealth < 50) {
+                cpu.className = "w-24 h-24 bg-gradient-to-br from-red-900 to-slate-900 border border-red-600 rounded-lg relative flex flex-col items-center justify-center z-10 shadow-[0_0_30px_rgba(239,68,68,0.5)] transition-all duration-300 glitch-active";
+                cpuIcon.className = "fa-solid fa-microchip text-4xl text-red-500 mb-1 drop-shadow-[0_0_10px_rgba(239,68,68,1)]";
+            }
+
+            if (motherboardHealth <= 0) {
+                triggerDeath();
+            }
+        }
+
+        function triggerDeath() {
+            isDead = true;
+            innerCavity.className = "absolute inset-[12px] bg-red-950 rounded-[2.4rem] overflow-hidden flex flex-col items-center justify-center z-10 border border-red-800 glitch-active";
+            
+            // 彈出 Modal
+            setTimeout(() => {
+                const modal = document.getElementById('death-modal');
+                const card = document.getElementById('death-card');
+                modal.classList.remove('pointer-events-none');
+                modal.style.opacity = '1';
+                card.classList.remove('scale-95');
+                card.classList.add('scale-100');
+            }, 800);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
