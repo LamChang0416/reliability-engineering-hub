@@ -55,7 +55,7 @@
 </head>
 <body class="min-h-screen flex flex-col md:flex-row p-4 md:p-6 gap-6">
 
-    <div class="w-full md:w-1/3 min-w-[350px] bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col shadow-2xl relative overflow-hidden">
+    <div class="w-full md:w-1/3 md:min-w-[350px] bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col shadow-2xl relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-red-500"></div>
         
         <h1 class="text-2xl font-black mb-2 tracking-tight">AI 伺服器供電決策台</h1>
@@ -127,7 +127,7 @@
             <div class="absolute top-4 right-6 text-xs font-bold tracking-widest text-slate-600 uppercase"><i class="fa-solid fa-server mr-1"></i>機櫃空間監測</div>
             
             <div class="flex-1 flex items-center justify-center relative mt-4">
-                <div class="w-full max-w-[400px] h-full max-h-[300px] border-4 border-slate-800 rounded-xl relative flex justify-end items-center bg-slate-950 overflow-hidden p-3 gap-3">
+                <div class="w-full max-w-[400px] h-[250px] md:h-full md:max-h-[300px] border-4 border-slate-800 rounded-xl relative flex justify-end items-center bg-slate-950 overflow-hidden p-3 gap-3">
                     
                     <div id="airflow" class="absolute inset-0 opacity-20 pointer-events-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjMDAwIiBmaWxsLW9wYWNpdHk9IjAiLz4KPHBhdGggZD0iTTAgMEw0IDRNTCA0TDAgNCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utb3BhY2l0eT0iMC4yIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+')] mix-blend-screen transition-opacity"></div>
                     
@@ -143,7 +143,7 @@
             </div>
         </div>
 
-        <div id="hvdc-lab" class="flex-[0.8] bg-slate-950 border border-slate-800 rounded-3xl p-6 relative overflow-hidden transition-all duration-700 opacity-40 pointer-events-none filter grayscale">
+        <div id="hvdc-lab" class="h-[250px] md:h-auto md:flex-[0.8] bg-slate-950 border border-slate-800 rounded-3xl p-6 relative overflow-hidden transition-all duration-700 opacity-40 pointer-events-none filter grayscale">
             <div class="flex justify-between items-center mb-4 relative z-20">
                 <div class="text-sm font-bold text-red-500 uppercase tracking-widest"><i class="fa-solid fa-triangle-exclamation mr-2"></i>高壓絕緣擊穿實驗室</div>
                 <div class="flex gap-2">
@@ -198,9 +198,9 @@
 
             if (!isHVDC) {
                 // 【12V 架構邏輯】
-                // 1. 銅排寬度飆升 (塞爆空間)
-                let width = 20 + (currentKW - 10) * 3; // 10kW=20px, 120kW=350px
-                busbar.style.width = width + 'px';
+                // 1. 銅排寬度飆升 (塞爆空間) 改用百分比以支援響應式 (Responsive)
+                let widthPercent = 5 + ((currentKW - 10) / 110) * 85; // 10kW=5%, 120kW=90%
+                busbar.style.width = widthPercent + '%';
                 
                 // 2. I^2R 熱損耗 (顏色與警告)
                 if (currentKW < 40) {
@@ -230,7 +230,7 @@
                 }
                 
                 // 擠壓 GPU 空間視覺回饋
-                if(width > 240) {
+                if(widthPercent > 60) {
                     gpuSpace.style.backgroundColor = 'rgba(220, 38, 38, 0.1)';
                     gpuSpace.style.borderColor = 'rgba(220, 38, 38, 0.8)';
                     gpuSpace.style.color = 'rgba(252, 165, 165, 1)';
@@ -245,8 +245,8 @@
             } else {
                 // 【400VDC 架構邏輯】
                 // 1. 銅排極細，但隨功率微幅增長以符合物理連動感
-                let hvdcWidth = 8 + (currentKW - 10) * 0.15; // 10kW=8px, 120kW=24.5px
-                busbar.style.width = hvdcWidth + 'px'; 
+                let hvdcWidthPercent = 2 + ((currentKW - 10) / 110) * 5; // 10kW=2%, 120kW=7%
+                busbar.style.width = hvdcWidthPercent + '%'; 
                 busbar.style.backgroundColor = '#3b82f6'; // Blue
                 busbar.style.boxShadow = '0 0 15px rgba(59,130,246,0.5)';
                 busbar.classList.remove('heat-critical');
