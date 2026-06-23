@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 機櫃供電架構：物理極限模擬器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #020617; /* Slate 950 */
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        .font-mono-num { font-family: 'JetBrains Mono', monospace; }
+        
+        /* 12V 熱震動特效 */
+        @keyframes heatShake {
+            0% { transform: translate(0, 0) }
+            20% { transform: translate(-1px, 1px) }
+            40% { transform: translate(1px, -1px) }
+            60% { transform: translate(-2px, 0px) }
+            80% { transform: translate(1px, 1px) }
+            100% { transform: translate(0, 0) }
+        }
+        .heat-critical { animation: heatShake 0.1s infinite; }
+
+        /* 滑桿客製化 */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px; width: 24px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 8px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 9999px;
+        }
+        
+        /* 銅排漸變過渡 */
+        #busbar { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col md:flex-row p-4 md:p-6 gap-6">
+
+    <div class="w-full md:w-1/3 min-w-[350px] bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col shadow-2xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-red-500"></div>
+        
+        <h1 class="text-2xl font-black mb-2 tracking-tight">AI 伺服器供電決策台</h1>
+        <p class="text-xs text-slate-400 mb-6 leading-relaxed">
+            這是一場突破物理極限的生存戰。請切換架構並拉高機櫃功耗，觀察 12V 面臨的「空間與熱崩潰」，以及 400VDC 帶來的「絕緣擊穿惡夢」。
+        </p>
+
+        <div class="flex gap-2 mb-8 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+            <button id="btn-12v" class="flex-1 py-3 text-sm font-bold rounded-lg bg-orange-600 shadow-lg text-white transition-all">
+                傳統 12V 架構
+            </button>
+            <button id="btn-400v" class="flex-1 py-3 text-sm font-bold rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-all">
+                高壓 400VDC 架構
+            </button>
+        </div>
+
+        <div class="mb-8 p-5 bg-slate-950 rounded-xl border border-slate-800">
+            <div class="flex justify-between items-end mb-4">
+                <label class="text-sm font-bold text-slate-300"><i class="fa-solid fa-bolt text-yellow-400 mr-2"></i>機櫃總功耗</label>
+                <span id="power-display" class="text-3xl font-black text-white font-mono-num">10 kW</span>
+            </div>
+            <input type="range" id="power-slider" min="10" max="120" value="10" step="5">
+            <div class="flex justify-between text-[10px] font-bold text-slate-500 mt-2">
+                <span>輕載 (10kW)</span>
+                <span>滿載極限 (120kW)</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <div class="flex justify-between items-center mb-1">
+                    <div class="text-[10px] text-slate-500 uppercase tracking-widest">總電流 (Amps)</div>
+                    <div class="text-[10px] text-slate-600 font-mono-num font-bold">I = P / V</div>
+                </div>
+                <div id="amp-display" class="text-2xl font-black text-orange-400 font-mono-num">833 A</div>
+            </div>
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-500 uppercase tracking-widest mb-1">線材熱損耗估算</div>
+                <div id="heat-display" class="text-2xl font-black text-red-400 font-mono-num">低</div>
+            </div>
+        </div>
+
+        <div id="alert-box" class="mt-auto p-4 rounded-xl bg-slate-800/50 border-l-4 border-slate-500 text-sm transition-all duration-300">
+            <div class="font-bold mb-1 flex items-center gap-2" id="alert-title">
+                <i class="fa-solid fa-info-circle"></i> 系統安全
+            </div>
+            <div class="text-slate-400 text-xs leading-relaxed" id="alert-desc">
+                目前處於低負載狀態，散熱與空間皆在安全容許範圍內。
+            </div>
+        </div>
+
+        <!-- Ad Banner & Footer -->
+        <div class="mt-4 p-4 bg-sky-400/5 border border-sky-400/30 rounded-2xl text-center space-y-4">
+            <p class="text-sm text-slate-300 font-medium">💡 Welcome back to Reliability Engineering Hub to explore more simulators!</p>
+            <a href="../index.html" class="inline-block px-4 py-2 bg-slate-800/50 hover:bg-slate-700 border border-slate-600/50 rounded-full text-sm font-bold text-slate-200 transition-all hover:-translate-y-0.5">
+                🏠 Back to Reliability Hub
+            </a>
+        </div>
+        
+        <div class="mt-4 text-center text-xs text-slate-500 font-mono-num">
+            Developed by <span class="font-bold text-sky-400">Lam | Reliability Engineer</span><br>
+            Built for #VibeCoding & #PhysicsOfFailure
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col gap-6">
+        
+        <div class="flex-1 bg-slate-900 border border-slate-800 rounded-3xl relative overflow-hidden flex flex-col p-6 shadow-xl">
+            <div class="absolute top-4 right-6 text-xs font-bold tracking-widest text-slate-600 uppercase"><i class="fa-solid fa-server mr-1"></i>機櫃空間監測</div>
+            
+            <div class="flex-1 flex items-center justify-center relative mt-4">
+                <div class="w-full max-w-[400px] h-full max-h-[300px] border-4 border-slate-800 rounded-xl relative flex justify-end items-center bg-slate-950 overflow-hidden p-3 gap-3">
+                    
+                    <div id="airflow" class="absolute inset-0 opacity-20 pointer-events-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjMDAwIiBmaWxsLW9wYWNpdHk9IjAiLz4KPHBhdGggZD0iTTAgMEw0IDRNTCA0TDAgNCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utb3BhY2l0eT0iMC4yIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+')] mix-blend-screen transition-opacity"></div>
+                    
+                    <div id="gpu-space" class="flex-1 h-[80%] border-2 border-dashed border-slate-700 bg-slate-800/30 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs text-center px-2 transition-all relative overflow-hidden z-10">
+                        <i class="fa-solid fa-microchip text-xl mb-1"></i>
+                        <span>GPU 可用空間</span>
+                    </div>
+
+                    <div id="busbar" class="h-full bg-[#fbbf24] shadow-[0_0_20px_rgba(251,191,36,0.3)] relative z-10 w-[20px] rounded-md transition-all duration-300">
+                        <div id="melt-drip" class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-4 h-8 bg-red-600 rounded-b-full opacity-0 blur-[2px] transition-opacity duration-300"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="hvdc-lab" class="flex-[0.8] bg-slate-950 border border-slate-800 rounded-3xl p-6 relative overflow-hidden transition-all duration-700 opacity-40 pointer-events-none filter grayscale">
+            <div class="flex justify-between items-center mb-4 relative z-20">
+                <div class="text-sm font-bold text-red-500 uppercase tracking-widest"><i class="fa-solid fa-triangle-exclamation mr-2"></i>高壓絕緣擊穿實驗室</div>
+                <div class="flex gap-2">
+                    <button id="btn-arc" class="px-4 py-2 bg-purple-900/50 hover:bg-purple-600 border border-purple-500/50 text-purple-200 text-xs font-bold rounded-lg transition-colors shadow-[0_0_10px_rgba(168,85,247,0.2)]">
+                        引發直流電弧 (Arcing)
+                    </button>
+                    <button id="btn-caf" class="px-4 py-2 bg-emerald-900/50 hover:bg-emerald-600 border border-emerald-500/50 text-emerald-200 text-xs font-bold rounded-lg transition-colors shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                        濕氣離子遷移 (CAF)
+                    </button>
+                </div>
+            </div>
+
+            <div class="absolute inset-0 mt-14 bg-slate-900 flex items-center justify-center border-t border-slate-800">
+                <canvas id="danger-canvas" class="w-full h-full"></canvas>
+                <div id="electrode-left" class="absolute left-1/4 w-4 h-32 bg-slate-600 rounded-l-md border-r-2 border-slate-400 opacity-0 transition-opacity z-0"></div>
+                <div id="electrode-right" class="absolute right-1/4 w-4 h-32 bg-slate-600 rounded-r-md border-l-2 border-slate-400 opacity-0 transition-opacity z-0"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DOM 元素獲取 ---
+        const btn12v = document.getElementById('btn-12v');
+        const btn400v = document.getElementById('btn-400v');
+        const powerSlider = document.getElementById('power-slider');
+        const powerDisplay = document.getElementById('power-display');
+        const ampDisplay = document.getElementById('amp-display');
+        const heatDisplay = document.getElementById('heat-display');
+        const busbar = document.getElementById('busbar');
+        const gpuSpace = document.getElementById('gpu-space');
+        const meltDrip = document.getElementById('melt-drip');
+        const alertBox = document.getElementById('alert-box');
+        const alertTitle = document.getElementById('alert-title');
+        const alertDesc = document.getElementById('alert-desc');
+        const hvdcLab = document.getElementById('hvdc-lab');
+        const btnArc = document.getElementById('btn-arc');
+        const btnCaf = document.getElementById('btn-caf');
+        
+        // --- 核心狀態 ---
+        let isHVDC = false; // false = 12V, true = 400V
+        let currentKW = 10;
+        
+        // --- 物理更新邏輯 ---
+        function updatePhysics() {
+            currentKW = parseInt(powerSlider.value);
+            powerDisplay.textContent = currentKW + ' kW';
+            
+            let voltage = isHVDC ? 400 : 12;
+            let amps = Math.round((currentKW * 1000) / voltage);
+            ampDisplay.textContent = amps.toLocaleString() + ' A';
+
+            if (!isHVDC) {
+                // 【12V 架構邏輯】
+                // 1. 銅排寬度飆升 (塞爆空間)
+                let width = 20 + (currentKW - 10) * 3; // 10kW=20px, 120kW=350px
+                busbar.style.width = width + 'px';
+                
+                // 2. I^2R 熱損耗 (顏色與警告)
+                if (currentKW < 40) {
+                    busbar.style.backgroundColor = '#fbbf24'; // Yellow
+                    busbar.style.boxShadow = '0 0 20px rgba(251,191,36,0.3)';
+                    busbar.classList.remove('heat-critical');
+                    meltDrip.style.opacity = '0';
+                    heatDisplay.textContent = '可控';
+                    heatDisplay.className = "text-2xl font-black text-yellow-500 font-mono-num";
+                    setAlert('info', '安全負載', '傳統架構運行中，機櫃空間與散熱尚能負荷。');
+                } else if (currentKW < 90) {
+                    busbar.style.backgroundColor = '#f97316'; // Orange
+                    busbar.style.boxShadow = '0 0 40px rgba(249,115,22,0.6)';
+                    busbar.classList.remove('heat-critical');
+                    meltDrip.style.opacity = '0';
+                    heatDisplay.textContent = '極高';
+                    heatDisplay.className = "text-2xl font-black text-orange-500 font-mono-num";
+                    setAlert('warning', '散熱瓶頸', '銅排過粗擠壓 GPU 空間。電流熱損耗激增，冷卻系統超載。');
+                } else {
+                    busbar.style.backgroundColor = '#dc2626'; // Red
+                    busbar.style.boxShadow = '0 0 80px rgba(220,38,38,0.9)';
+                    busbar.classList.add('heat-critical');
+                    meltDrip.style.opacity = '1';
+                    heatDisplay.textContent = '崩潰熔毀';
+                    heatDisplay.className = "text-2xl font-black text-red-500 font-mono-num animate-pulse";
+                    setAlert('danger', '物理崩潰', 'I²R 發熱失控。銅排過粗導致機櫃空間歸零，系統即將引發火災。');
+                }
+                
+                // 擠壓 GPU 空間視覺回饋
+                if(width > 240) {
+                    gpuSpace.style.backgroundColor = 'rgba(220, 38, 38, 0.1)';
+                    gpuSpace.style.borderColor = 'rgba(220, 38, 38, 0.8)';
+                    gpuSpace.style.color = 'rgba(252, 165, 165, 1)';
+                    gpuSpace.innerHTML = '<i class="fa-solid fa-ban text-xl mb-1"></i><span class="text-[10px]">空間不足</span>';
+                } else {
+                    gpuSpace.style.backgroundColor = 'rgba(30, 41, 59, 0.3)';
+                    gpuSpace.style.borderColor = 'rgba(71, 85, 105, 1)';
+                    gpuSpace.style.color = 'rgba(148, 163, 184, 1)';
+                    gpuSpace.innerHTML = '<i class="fa-solid fa-microchip text-xl mb-1"></i><span>GPU 可用空間</span>';
+                }
+
+            } else {
+                // 【400VDC 架構邏輯】
+                // 1. 銅排極細，但隨功率微幅增長以符合物理連動感
+                let hvdcWidth = 8 + (currentKW - 10) * 0.15; // 10kW=8px, 120kW=24.5px
+                busbar.style.width = hvdcWidth + 'px'; 
+                busbar.style.backgroundColor = '#3b82f6'; // Blue
+                busbar.style.boxShadow = '0 0 15px rgba(59,130,246,0.5)';
+                busbar.classList.remove('heat-critical');
+                meltDrip.style.opacity = '0';
+                
+                gpuSpace.style.backgroundColor = 'rgba(30, 41, 59, 0.3)';
+                gpuSpace.style.borderColor = 'rgba(71, 85, 105, 1)';
+                gpuSpace.style.color = 'rgba(148, 163, 184, 1)';
+                gpuSpace.innerHTML = '<i class="fa-solid fa-server text-xl mb-1 text-blue-400"></i><span class="text-blue-300">大量擴充空間</span>';
+                
+                heatDisplay.textContent = '極低 (安全)';
+                heatDisplay.className = "text-2xl font-black text-blue-400 font-mono-num";
+                
+                setAlert('hvdc', '高壓致命風險解鎖', '熱與空間問題已解決。但 400V 高壓環境啟動，隨時面臨絕緣擊穿與電弧威脅。');
+            }
+        }
+
+        function setAlert(type, title, desc) {
+            alertTitle.innerHTML = title;
+            alertDesc.innerHTML = desc;
+            alertBox.className = "mt-auto p-4 rounded-xl border-l-4 transition-all duration-300 ";
+            if(type === 'info') alertBox.className += "bg-slate-800/50 border-slate-500 text-slate-300";
+            if(type === 'warning') alertBox.className += "bg-orange-900/30 border-orange-500 text-orange-200";
+            if(type === 'danger') alertBox.className += "bg-red-900/40 border-red-500 text-red-200";
+            if(type === 'hvdc') alertBox.className += "bg-purple-900/30 border-purple-500 text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.2)]";
+        }
+
+        // --- 事件綁定 ---
+        powerSlider.addEventListener('input', updatePhysics);
+        
+        btn12v.addEventListener('click', () => {
+            isHVDC = false;
+            btn12v.className = "flex-1 py-3 text-sm font-bold rounded-lg bg-orange-600 shadow-[0_0_15px_rgba(234,88,12,0.4)] text-white transition-all";
+            btn400v.className = "flex-1 py-3 text-sm font-bold rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-all";
+            
+            // 鎖定下方實驗室
+            hvdcLab.classList.add('opacity-40', 'pointer-events-none', 'grayscale');
+            stopCanvasAnimation();
+            updatePhysics();
+        });
+
+        btn400v.addEventListener('click', () => {
+            isHVDC = true;
+            btn400v.className = "flex-1 py-3 text-sm font-bold rounded-lg bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)] text-white transition-all";
+            btn12v.className = "flex-1 py-3 text-sm font-bold rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-all";
+            
+            // 解鎖下方實驗室
+            hvdcLab.classList.remove('opacity-40', 'pointer-events-none', 'grayscale');
+            updatePhysics();
+        });
+
+        // --- Canvas 高壓特效引擎 ---
+        const canvas = document.getElementById('danger-canvas');
+        const ctx = canvas.getContext('2d');
+        let animationId = null;
+        let activeEffect = null; // 'arc' or 'caf'
+        
+        const elLeft = document.getElementById('electrode-left');
+        const elRight = document.getElementById('electrode-right');
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function stopCanvasAnimation() {
+            if(animationId) cancelAnimationFrame(animationId);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            elLeft.style.opacity = '0';
+            elRight.style.opacity = '0';
+            activeEffect = null;
+        }
+
+        // 1. 直流電弧 (DC Arcing)
+        function drawArc() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const startX = canvas.width * 0.25 + 16;
+            const endX = canvas.width * 0.75;
+            const y = canvas.height / 2;
+
+            ctx.globalCompositeOperation = 'lighter';
+            
+            // 繪製多條電弧製造電漿感
+            for(let i=0; i<3; i++) {
+                ctx.beginPath();
+                ctx.moveTo(startX, y);
+                
+                let currX = startX;
+                let currY = y;
+                
+                while(currX < endX) {
+                    currX += (Math.random() * 20 + 10);
+                    if(currX > endX) currX = endX;
+                    currY = y + (Math.random() - 0.5) * 40; // 抖動幅度
+                    ctx.lineTo(currX, currY);
+                }
+                
+                ctx.lineWidth = Math.random() * 3 + 2;
+                ctx.strokeStyle = i===0 ? '#fff' : '#c084fc'; // 中心白，外圍紫
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#a855f7';
+                ctx.stroke();
+            }
+            animationId = requestAnimationFrame(drawArc);
+        }
+
+        // 2. 離子遷移 (CAF) 短路樹枝
+        let branches = [];
+        function initCAF() {
+            branches = [];
+            for(let i=0; i<5; i++) {
+                branches.push({
+                    x: canvas.width * 0.25 + 16,
+                    y: canvas.height / 2 + (Math.random() - 0.5) * 80,
+                    targetX: canvas.width * 0.75,
+                    active: true,
+                    path: []
+                });
+            }
+        }
+        
+        function drawCAF() {
+            // 背景略帶深色模擬 PCB 內部
+            ctx.fillStyle = 'rgba(2, 20, 15, 0.15)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.globalCompositeOperation = 'source-over';
+
+            branches.forEach(b => {
+                if(b.active) {
+                    b.path.push({x: b.x, y: b.y});
+                    
+                    // 向右生長，帶有隨機上下蔓延
+                    b.x += Math.random() * 8 + 2;
+                    b.y += (Math.random() - 0.5) * 15;
+                    
+                    if(b.x >= b.targetX) {
+                        b.x = b.targetX;
+                        b.path.push({x: b.x, y: b.y});
+                        b.active = false;
+                    }
+                }
+                
+                // 畫出軌跡
+                if(b.path.length > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(b.path[0].x, b.path[0].y);
+                    for(let i=1; i<b.path.length; i++){
+                        ctx.lineTo(b.path[i].x, b.path[i].y);
+                    }
+
+                    if(b.active) {
+                        // 生長中的銅離子 (幽暗綠色)
+                        ctx.shadowBlur = 5;
+                        ctx.shadowColor = '#059669'; 
+                        ctx.lineWidth = 1.5;
+                        ctx.strokeStyle = '#10b981';
+                    } else {
+                        // 貫穿後的碳化發熱 (暗紅色/橘色脈衝)
+                        let pulse = Math.abs(Math.sin(Date.now() / 150));
+                        ctx.shadowBlur = 10 + pulse * 10;
+                        ctx.shadowColor = '#dc2626'; 
+                        ctx.lineWidth = 2 + pulse * 1.5;
+                        ctx.strokeStyle = '#ea580c'; // 橘紅色短路高溫
+                        
+                        // 終點處的碳化悶燒點
+                        ctx.fillStyle = 'rgba(69, 10, 10, 0.8)'; // 深碳化色
+                        ctx.beginPath();
+                        ctx.arc(b.targetX, b.y, 4 + pulse * 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.stroke();
+                }
+            });
+
+            animationId = requestAnimationFrame(drawCAF);
+        }
+
+        btnArc.addEventListener('click', () => {
+            stopCanvasAnimation();
+            activeEffect = 'arc';
+            elLeft.style.opacity = '1'; elRight.style.opacity = '1';
+            drawArc();
+        });
+
+        btnCaf.addEventListener('click', () => {
+            stopCanvasAnimation();
+            activeEffect = 'caf';
+            elLeft.style.opacity = '1'; elRight.style.opacity = '1';
+            initCAF();
+            drawCAF();
+        });
+
+        // 初始化
+        updatePhysics();
+    </script>
+</body>
+</html>
