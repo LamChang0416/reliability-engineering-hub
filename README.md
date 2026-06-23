@@ -82,6 +82,12 @@ An interactive tool demonstrating the physics of failure when high temperatures 
 - **Component Damage**: Simulates real-time short circuits on the CPU and severe battery swelling.
 - **Interactive UI**: Dynamic visual effects including short-circuit sparks, glitching, and battery temperature monitoring.
 
+#### 12. AI Power Architecture Simulator
+An interactive simulator comparing traditional 12V and high-voltage 400VDC power delivery in high-density AI servers.
+- **Space & Thermal Physics**: Visualizes the extreme busbar expansion and I²R thermal runaway when using 12V at high power loads (up to 120kW).
+- **HVDC Risks**: Demonstrates the severe reliability challenges of 400VDC, including unextinguishable DC Arcing and Conductive Anodic Filament (CAF) short circuits.
+- **Dynamic Feedback**: Real-time compression of GPU space and dynamically scaling thermal/arcing visual effects.
+
 ### 📂 Project Structure
 - `index.html`: The central hub and entry point.
 - `tools/`: Individual engineering tools categorized by function.
@@ -96,6 +102,7 @@ An interactive tool demonstrating the physics of failure when high temperatures 
   - `drop-test.html`: Smartphone drop test functional verification tool.
   - `system-update-simulator.html`: OS update and hardware life simulator.
   - `ip68-simulator.html`: IP68 thermal degradation and water ingress simulator.
+  - `ai-power-simulator.html`: AI server 12V vs 400V power architecture and HVDC risks simulator.
 - `assets/`: Shared styles and branding elements.
 
 ### 📖 How to Use
@@ -186,6 +193,12 @@ AI 伺服器水冷 CDU 液冷架構專用的微氣候與冷凝風險計算器。
 - **零件損壞模擬**：真實模擬水滴滴入主機板造成的 CPU 短路火花與電池極限膨脹。
 - **互動式拉桿**：拖曳水溫拉桿，觀察不同溫度對手機防護力的不可逆破壞。
 
+#### 12. AI 機櫃供電架構模擬器 (AI Power Architecture Simulator)
+比較傳統 12V 與高壓 400VDC 在高密度 AI 伺服器中的供電架構互動模擬器。
+- **空間與散熱極限**：視覺化展示 12V 在高功率（高達 120kW）下所面臨的恐怖銅排體積膨脹與 I²R 熱失控。
+- **高壓致命風險**：展示 400VDC 帶來的嚴峻可靠度挑戰，包括難以熄滅的直流電弧 (DC Arcing) 與濕氣離子遷移 (CAF) 短路。
+- **動態物理回饋**：即時模擬 GPU 空間被擠壓的絕望感，以及短路引發的局部碳化悶燒特效。
+
 ### 📂 專案目錄結構
 - `index.html`: 首頁與主要入口儀表板。
 - `tools/`: 各項工程工具。
@@ -200,6 +213,7 @@ AI 伺服器水冷 CDU 液冷架構專用的微氣候與冷凝風險計算器。
   - `drop-test.html`: 手機落下測試硬體驗證工具。
   - `system-update-simulator.html`: OS 更新與硬體壽命模擬器。
   - `ip68-simulator.html`: IP68 防水膠條熱衰退與水氣入侵模擬器。
+  - `ai-power-simulator.html`: AI 伺服器 12V 與 400V 供電架構及高壓風險模擬器。
 - `assets/`: 共用樣式與品牌視覺資源。
 
 ### 📖 如何使用
